@@ -1,4 +1,4 @@
 fastapi
 uvicorn
-aiogram==2.25.1  # або останню стабільну 2.x
-python-dotenv
+requests
+python-telegram-bot==13.15

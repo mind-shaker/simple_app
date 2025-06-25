@@ -1,21 +1,24 @@
-from aiogram import Bot, Dispatcher, types
-from aiogram.types import Message
-from aiogram.dispatcher.webhook import SendMessage
 from fastapi import FastAPI, Request
-import os
 
-BOT_TOKEN = "7795558482:AAE8WEmzTJqQkfSLKUPXjVK40QIUC2mitYg"
+import telegram
 
-bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher(bot)
+# 🔑 Токен бота
+TOKEN ="7795558482:AAE8WEmzTJqQkfSLKUPXjVK40QIUC2mitYg"
+
+# 🤖 Ініціалізація бота
+bot = telegram.Bot(token=TOKEN)
+
+# 🌐 FastAPI додаток
 app = FastAPI()
 
-@dp.message_handler(commands=["start"])
-async def cmd_start(message: Message):
-    return SendMessage(message.chat.id, "Привіт! Я на webhook.")
-
+# 📩 Обробка вхідних POST-запитів з Telegram
 @app.post("/webhook")
-async def process_webhook(request: Request):
-    update = types.Update(**await request.json())
-    await dp.process_update(update)
+async def telegram_webhook(request: Request):
+    data = await request.json()
+    message = data.get("message", {})
+    chat_id = message.get("chat", {}).get("id")
+
+    if chat_id:
+        bot.send_message(chat_id=chat_id, text="Зрозумів")
+
     return {"status": "ok"}
