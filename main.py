@@ -3,7 +3,7 @@ import os
 import telegram
 
 # 🔑 Токен бота
-TOKEN = os.getenv("BOT_TOKEN") or "тут_твій_токен"
+TOKEN = os.getenv("BOT_TOKEN") or "7795558482:AAE8WEmzTJqQkfSLKUPXjVK40QIUC2mitYg"
 
 # 🤖 Ініціалізація бота
 bot = telegram.Bot(token=TOKEN)
