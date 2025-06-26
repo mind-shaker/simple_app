@@ -1,4 +1,4 @@
 fastapi
-uvicorn
-requests
-python-telegram-bot==13.15
+uvicorn[standard]
+python-telegram-bot
+python-telegram-bot[fastapi]
