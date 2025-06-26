@@ -37,6 +37,7 @@ async def telegram_webhook(request: Request):
     print("🔥 Отримано текст від Telegram:", user_text)
 
     if chat_id and user_text:
+        print("🔥 Відправка в ШІ")
         response_text = await query_huggingface(user_text)
         await bot.send_message(chat_id=chat_id, text=response_text)
 
