@@ -29,12 +29,12 @@ async def query_huggingface(prompt: str) -> str:
 async def telegram_webhook(request: Request):
     data = await request.json()
 
-    # 🟡 Ось тут виводимо повний JSON запиту від Telegram:
-    print("🔥 Отримано запит від Telegram:", data)
 
     message = data.get("message", {})
     chat_id = message.get("chat", {}).get("id")
     user_text = message.get("text", "")
+    # 🟡 Ось тут виводимо повний JSON запиту від Telegram:
+    print("🔥 Отримано текст від Telegram:", user_text)
 
     if chat_id and user_text:
         response_text = await query_huggingface(user_text)
