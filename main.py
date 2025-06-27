@@ -2,6 +2,12 @@ from fastapi import FastAPI, Request
 from telegram import Bot
 import os
 import httpx
+import asyncpg
+
+DATABASE_URL = os.getenv("DATABASE_URL")  # напр.: "postgresql://user:pass@host:port/dbname"
+
+async def get_connection():
+    return await asyncpg.connect(DATABASE_URL)
 
 # Змінні середовища
 HF_TOKEN = os.getenv("HF_TOKEN")
@@ -69,24 +75,73 @@ async def telegram_webhook(request: Request):
     user_text = message.get("text", "")
     from_user = message.get("from", {})
 
-    user_id = from_user.get("id")                 # Унікальний ID користувача Telegram
+    user_id = from_user.get("id")
     username = from_user.get("username")
-    first_name = from_user.get("first_name")
+    first_name = from_user.get("first_name", "")
     last_name = from_user.get("last_name", "")
+    full_name = f"{first_name} {last_name}".strip()
 
-    print("👤 USER ID:", user_id)
-    print("👤 USERNAME:", username)
-    print("👤 NAME:", f"{first_name} {last_name}")
-    print("🔥 Отримано текст від Telegram:", user_text)
+    mark = 0  # 🧠 прапорець: були внесені зміни — зупинимось
 
-    # 🎯 Обробка /start
-    if user_text.strip().lower() == "/start":
-        await bot.send_message(chat_id=chat_id, text="Привіт! Я твій ШІ-співрозмовник 🤖. Напиши щось!")
-        return {"status": "start_handled"}
+    conn = await get_connection()
+    try:
+        # Отримуємо користувача або створюємо нового
+        existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
+        if not existing_user:
+            await conn.execute(
+                "INSERT INTO users (telegram_id, username, full_name) VALUES ($1, $2, $3)",
+                user_id, username, full_name
+            )
+            await bot.send_message(chat_id=chat_id, text="👋 Вітаю! Ви додані в систему.")
+            mark = 1
 
-    # 🔁 Інакше — звичайний діалог
-    if chat_id and user_text:
+        # 🔹 Перевірка на /start
+        if user_text.strip().lower() == "/start":
+            await bot.send_message(chat_id=chat_id, text="✅ Ви вже в системі. Продовжимо 👇")
+            mark = 1
+
+        # 🔹 Обробка /country=
+        if user_text.lower().startswith("/country="):
+            country_code = user_text.split("=", 1)[1].strip().upper()
+            await conn.execute(
+                "UPDATE users SET country = $1 WHERE telegram_id = $2",
+                country_code, user_id
+            )
+            await bot.send_message(chat_id=chat_id, text=f"✅ Країну збережено: {country_code}")
+            mark = 1
+
+        # 🔹 Обробка /language=
+        if user_text.lower().startswith("/language="):
+            lang_code = user_text.split("=", 1)[1].strip().lower()
+            await conn.execute(
+                "UPDATE users SET language = $1 WHERE telegram_id = $2",
+                lang_code, user_id
+            )
+            await bot.send_message(chat_id=chat_id, text=f"✅ Мову збережено: {lang_code}")
+            mark = 1
+
+        # 🔄 Оновимо запис користувача після всіх змін
+        existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
+
+        # 🔻 Якщо не заповнена країна — запитати й вийти
+        if not existing_user["country"]:
+            await bot.send_message(chat_id=chat_id, text="🌍 Введіть країну у форматі: `/country=UA`", parse_mode="Markdown")
+            return {"status": "waiting_country"}
+
+        # 🔻 Якщо не заповнена мова — запитати й вийти
+        if not existing_user["language"]:
+            await bot.send_message(chat_id=chat_id, text="🗣 Введіть мову у форматі: `/language=uk`", parse_mode="Markdown")
+            return {"status": "waiting_language"}
+
+        # 🛑 Якщо були зміни — зупинити виконання (не надсилати до ШІ)
+        if mark == 1:
+            return {"status": "data_updated"}
+
+        # 🤖 Нарешті, діалог з ШІ
         response_text = await query_huggingface(user_text)
         await bot.send_message(chat_id=chat_id, text=response_text)
+
+    finally:
+        await conn.close()
 
     return {"status": "ok"}
