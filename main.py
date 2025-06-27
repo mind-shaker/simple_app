@@ -134,11 +134,12 @@ async def telegram_webhook(request: Request):
         # Перевірка порожнього або пробільного поля language
         language = existing_user["language"]
         if not language or language.strip() == "":
-            await bot.send_message(chat_id=chat_id, text="🗣 Введіть мову у форматі: `/language=uk`", parse_mode="Markdown")
+            await bot.send_message(chat_id=chat_id, text="🗣 Введіть мову у форматі: `/language=ua`", parse_mode="Markdown")
             return {"status": "waiting_language"}
 
         # Якщо були зміни — завершуємо обробку
         if mark == 1:
+            await bot.send_message(chat_id=chat_id, text=f"Етап налаштувань завершено. Розпочинаємо діалог")
             return {"status": "data_updated"}
 
         # В іншому випадку — надсилаємо запит до ШІ
