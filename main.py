@@ -13,17 +13,27 @@ app = FastAPI()
 async def query_huggingface(prompt: str) -> str:
     headers = {"Authorization": f"Bearer {HF_TOKEN}"}
     payload = {"inputs": f"[INST] {prompt} [/INST]"}
+    
+    print("🚀 Надсилаємо запит до Hugging Face...")
+    print("🔑 TOKEN:", HF_TOKEN[:10] + "..." if HF_TOKEN else "❌ Немає токена")
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(HF_API_URL, json=payload, headers=headers)
+        try:
+            response = await client.post(HF_API_URL, json=payload, headers=headers)
+            print("📡 Status Code:", response.status_code)
+            print("📦 Response JSON:", response.json())
+            
+            if response.status_code == 200:
+                result = response.json()
+                generated = result[0]["generated_text"]
+                answer = generated.split("[/INST]")[-1].strip()
+                return answer
+            else:
+                return f"⚠️ Hugging Face помилка: {response.status_code}"
 
-    try:
-        result = response.json()
-        generated = result[0]["generated_text"]
-        answer = generated.split("[/INST]")[-1].strip()
-        return answer
-    except Exception:
-        return "На жаль, щось пішло не так 😔"
+        except Exception as e:
+            print("❌ Виняток під час запиту:", str(e))
+            return "На жаль, щось пішло не так 😔"
 
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
