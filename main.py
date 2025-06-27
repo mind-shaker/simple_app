@@ -61,21 +61,32 @@ async def query_huggingface(user_prompt: str) -> str:
             print("📦 Повна відповідь (можливо недоступна):", response.text if 'response' in locals() else 'response is undefined')
             return "На жаль, щось пішло не так 😔"
 
-# 📩 Обробка запитів Telegram
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
     data = await request.json()
-
     message = data.get("message", {})
     chat_id = message.get("chat", {}).get("id")
     user_text = message.get("text", "")
+    from_user = message.get("from", {})
 
+    user_id = from_user.get("id")                 # Унікальний ID користувача Telegram
+    username = from_user.get("username")
+    first_name = from_user.get("first_name")
+    last_name = from_user.get("last_name", "")
+
+    print("👤 USER ID:", user_id)
+    print("👤 USERNAME:", username)
+    print("👤 NAME:", f"{first_name} {last_name}")
     print("🔥 Отримано текст від Telegram:", user_text)
 
+    # 🎯 Обробка /start
+    if user_text.strip().lower() == "/start":
+        await bot.send_message(chat_id=chat_id, text="Привіт! Я твій ШІ-співрозмовник 🤖. Напиши щось!")
+        return {"status": "start_handled"}
+
+    # 🔁 Інакше — звичайний діалог
     if chat_id and user_text:
-        print("🔥 Відправка в ШІ")
         response_text = await query_huggingface(user_text)
-        print("🔥 Отримано текст від huggingface:", response_text)
         await bot.send_message(chat_id=chat_id, text=response_text)
 
     return {"status": "ok"}
