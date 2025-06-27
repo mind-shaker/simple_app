@@ -35,9 +35,9 @@ async def query_huggingface(user_prompt: str) -> str:
 
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(API_URL, headers=headers, json=payload)
+            response = await client.post(API_URL, headers=headers, json=payload, timeout=15.0)
             print("📡 Status Code:", response.status_code)
-            print("📦 Response Text:", await response.aread())
+            print("📦 Raw text:", response.text)
 
 
             if response.status_code == 200:
