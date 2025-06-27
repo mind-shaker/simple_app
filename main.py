@@ -37,6 +37,8 @@ async def query_huggingface(user_prompt: str) -> str:
         try:
             response = await client.post(API_URL, headers=headers, json=payload)
             print("📡 Status Code:", response.status_code)
+            print("📦 Response Text:", await response.aread())
+
 
             if response.status_code == 200:
                 result = response.json()
