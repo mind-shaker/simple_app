@@ -55,8 +55,10 @@ async def query_huggingface(user_prompt: str) -> str:
                 print("⚠️ HuggingFace response:", response.text)
                 return f"⚠️ Hugging Face помилка: {response.status_code}"
 
+
         except Exception as e:
-            print("❌ Виняток під час запиту:", str(e))
+            print("❌ Виняток під час запиту:", str(e))  # ← вже є, але e може бути пустим
+            print("📦 Повна відповідь (можливо недоступна):", response.text if 'response' in locals() else 'response is undefined')
             return "На жаль, щось пішло не так 😔"
 
 # 📩 Обробка запитів Telegram
