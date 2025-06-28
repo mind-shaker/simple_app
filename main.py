@@ -25,11 +25,17 @@ headers = {
     "Content-Type": "application/json"
 }
 
-async def query_openrouter_chat(messages: list[dict]) -> str:
+async def query_openrouter_chat(user_input: str) -> str:
     payload = {
-        "model": "mistralai/mistral-small-3.2-24b-instruct:free",
-        "messages": messages
+        "model": "moonshotai/kimi-dev-72b:free",
+        "messages": [
+            {
+                "role": "user",
+                "content": user_input
+            }
+        ]
     }
+
 
     async with httpx.AsyncClient(timeout=30) as client:
         try:
@@ -44,6 +50,7 @@ async def query_openrouter_chat(messages: list[dict]) -> str:
             return data["choices"][0]["message"]["content"]
         except Exception as e:
             return f"⚠️ Помилка при запиті до OpenRouter API: {e}"
+
 
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
