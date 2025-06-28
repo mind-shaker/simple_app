@@ -33,6 +33,7 @@ async def query_openrouter_chat(messages: list[dict]) -> str:
 
     async with httpx.AsyncClient(timeout=30) as client:
         try:
+            print("📦 payload API:", payload)
             response = await client.post(API_URL, headers=headers, json=payload)
             print("📦 JSON-відповідь від API:", response)
             response.raise_for_status()
