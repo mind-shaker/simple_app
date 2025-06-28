@@ -160,6 +160,8 @@ async def telegram_webhook(request: Request):
         
         # Додаємо нове повідомлення користувача (перед відправкою до ШІ)
         # messages.append({"role": "user", "content": user_text})
+
+        print("👤 messages:", messages)
         
         # 2. Отримати відповідь від ШІ
         response_text = await query_openrouter_chat(user_text)
