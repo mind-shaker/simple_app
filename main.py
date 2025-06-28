@@ -75,9 +75,13 @@ async def telegram_webhook(request: Request):
                 )
                 await bot.send_message(chat_id=chat_id, text="👋 Вітаю! Ви додані в систему.")
                 mark = 1
+                # Перечитуємо користувача після оновлень
+                existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
         else:
             print("⚠️ Неможливо вставити користувача: user_id = None")
             return {"status": "skipped_null_user"}
+
+        
 
         # Обробка /start
         if user_text.strip().lower() == "/start":
@@ -104,8 +108,7 @@ async def telegram_webhook(request: Request):
             await bot.send_message(chat_id=chat_id, text=f"✅ Мову збережено: {lang_code}")
             mark = 1
 
-        # Перечитуємо користувача після оновлень
-        existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
+        
 
         # Перевірка порожнього або пробільного поля country
         country = existing_user["country"]
@@ -124,10 +127,27 @@ async def telegram_webhook(request: Request):
             await bot.send_message(chat_id=chat_id, text=f"Етап налаштувань завершено. Розпочинаємо діалог")
             return {"status": "data_updated"}
 
+        db_user_id = existing_user["id"]  # внутрішній user_id у базі для подальших операцій
+
         # В іншому випадку — надсилаємо запит до ШІ
         # Надсилаємо повідомлення і зберігаємо його
         thinking_msg = await bot.send_message(chat_id=chat_id, text="🧠 Думаю...")
-        response_text = await query_openrouter_chat(user_text)
+
+        # 1. Зберегти повідомлення користувача
+        await conn.execute(
+            "INSERT INTO dialogue (user_id, sender_role, message_text, timestamp) VALUES ($1, 'user', $2, NOW())",
+            db_user_id, user_text
+        )
+        
+        # 2. Отримати відповідь від ШІ
+        response_text = await query_huggingface(user_text)
+        
+        # 3. Зберегти відповідь ШІ
+        await conn.execute(
+            "INSERT INTO dialogue (user_id, sender_role, message_text, timestamp) VALUES ($1, 'assistant', $2, NOW())",
+            db_user_id, response_text
+        )
+
         # Видаляємо повідомлення, якщо воно ще є
         try:
             await thinking_msg.delete()
