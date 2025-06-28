@@ -128,6 +128,10 @@ async def telegram_webhook(request: Request):
             return {"status": "data_updated"}
 
         db_user_id = existing_user["id"]  # внутрішній user_id у базі для подальших операцій
+        if user_text.strip().lower() == "/erasure":
+            await conn.execute("DELETE FROM dialogs WHERE user_id = $1", db_user_id)
+            await bot.send_message(chat_id=chat_id, text="🗑️ Всі ваші повідомлення видалено з бази.")
+            return
 
         # В іншому випадку — надсилаємо запит до ШІ
         # Надсилаємо повідомлення і зберігаємо його
