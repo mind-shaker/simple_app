@@ -17,8 +17,8 @@ bot = Bot(token=TELEGRAM_TOKEN)
 app = FastAPI()
 
 HF_TOKEN = os.getenv("HF_TOKEN")  # або встав напряму: "hf_..."
-API_URL = "https://router.huggingface.co/fireworks-ai/inference/v1/chat/completions"
-MODEL_NAME = "accounts/fireworks/models/deepseek-r1-0528"
+API_URL = "https://router.huggingface.co/featherless-ai/v1/chat/completions"
+MODEL_NAME = "Skywork/Skywork-SWE-32B"
 
 headers = {
     "Authorization": f"Bearer {HF_TOKEN}",
