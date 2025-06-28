@@ -140,7 +140,7 @@ async def telegram_webhook(request: Request):
         )
         
         # 2. Отримати відповідь від ШІ
-        response_text = await query_huggingface(user_text)
+        response_text = await query_openrouter_chat(user_text)
         
         # 3. Зберегти відповідь ШІ
         await conn.execute(
