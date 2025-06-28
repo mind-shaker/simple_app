@@ -66,7 +66,7 @@ async def telegram_webhook(request: Request):
         # Отримуємо користувача з бази
         existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
 
-        # Якщо користувача немає — додаємо
+    if user_id is not None:
         if not existing_user:
             await conn.execute(
                 "INSERT INTO users (telegram_id, username, full_name) VALUES ($1, $2, $3)",
@@ -74,6 +74,9 @@ async def telegram_webhook(request: Request):
             )
             await bot.send_message(chat_id=chat_id, text="👋 Вітаю! Ви додані в систему.")
             mark = 1
+    else:
+        print("⚠️ Неможливо вставити користувача: user_id = None")
+        return {"status": "skipped_null_user"}
 
         # Обробка /start
         if user_text.strip().lower() == "/start":
