@@ -34,6 +34,7 @@ async def query_openrouter_chat(messages: list[dict]) -> str:
     async with httpx.AsyncClient(timeout=30) as client:
         try:
             response = await client.post(API_URL, headers=headers, json=payload)
+            print("📦 JSON-відповідь від API:", response)
             response.raise_for_status()
             data = response.json()
             # Відповідь у форматі OpenAI-like: беремо text з choices[0].message.content
