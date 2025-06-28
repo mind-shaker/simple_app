@@ -4,6 +4,7 @@ import os
 import httpx
 import asyncpg
 
+
 DATABASE_URL = os.getenv("DATABASE_URL")  # напр.: "postgresql://user:pass@host:port/dbname"
 
 async def get_connection():
@@ -26,7 +27,7 @@ headers = {
 
 async def query_openrouter_chat(user_input: str) -> str:
     payload = {
-        "model": "openai/gpt-3.5-turbo-0613",
+        "model": "mistralai/mistral-small-3.2-24b-instruct:free",
         "messages": [
             {
                 "role": "user",
