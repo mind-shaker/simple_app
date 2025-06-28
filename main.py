@@ -75,13 +75,13 @@ async def telegram_webhook(request: Request):
                 )
                 await bot.send_message(chat_id=chat_id, text="👋 Вітаю! Ви додані в систему.")
                 mark = 1
-                # Перечитуємо користувача після оновлень
-                existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
+                
         else:
             print("⚠️ Неможливо вставити користувача: user_id = None")
             return {"status": "skipped_null_user"}
 
-        
+        # Перечитуємо користувача після оновлень
+        existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)        
 
         # Обробка /start
         if user_text.strip().lower() == "/start":
