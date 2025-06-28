@@ -13,8 +13,8 @@ async def get_connection():
 HF_TOKEN = os.getenv("HF_TOKEN")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
-API_URL = "https://router.huggingface.co/fireworks-ai/inference/v1/chat/completions"
-MODEL_ID = "accounts/fireworks/models/deepseek-r1-0528"
+API_URL = "https://router.huggingface.co/novita/v3/openai/chat/completions"
+MODEL_ID = "minimaxai/minimax-m1-80k"
 
 bot = Bot(token=TELEGRAM_TOKEN)
 app = FastAPI()
