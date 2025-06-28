@@ -41,7 +41,7 @@ async def query_huggingface(user_prompt: str) -> str:
 
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(API_URL, headers=headers, json=payload, timeout=30.0)
+            response = await client.post(API_URL, headers=headers, json=payload, timeout=60.0)
             print("📡 Status Code:", response.status_code)
             print("📦 Raw text:", response.text)
 
@@ -143,7 +143,15 @@ async def telegram_webhook(request: Request):
             return {"status": "data_updated"}
 
         # В іншому випадку — надсилаємо запит до ШІ
+        # Надсилаємо повідомлення і зберігаємо його
+        thinking_msg = await bot.send_message(chat_id=chat_id, text="🧠 Думаю...")
         response_text = await query_huggingface(user_text)
+        # Видаляємо повідомлення, якщо воно ще є
+        try:
+            await thinking_msg.delete()
+        except Exception as e:
+            # Якщо не вдалося видалити (наприклад, вже видалено) — можна проігнорувати
+            pass
         await bot.send_message(chat_id=chat_id, text=response_text)
 
     finally:
