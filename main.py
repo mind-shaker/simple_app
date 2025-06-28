@@ -13,59 +13,37 @@ async def get_connection():
 HF_TOKEN = os.getenv("HF_TOKEN")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
-API_URL = "https://router.huggingface.co/novita/v3/openai/chat/completions"
-MODEL_ID = "minimaxai/minimax-m1-80k"
-
 bot = Bot(token=TELEGRAM_TOKEN)
 app = FastAPI()
 
-# 🧠 Звернення до Hugging Face
-async def query_huggingface(user_prompt: str) -> str:
-    headers = {
-        "Authorization": f"Bearer {HF_TOKEN}",
-        "Content-Type": "application/json"
-    }
+HF_TOKEN = os.getenv("HF_TOKEN")  # або встав напряму: "hf_..."
+API_URL = "https://router.huggingface.co/fireworks-ai/inference/v1/chat/completions"
+MODEL_NAME = "accounts/fireworks/models/deepseek-r1-0528"
 
+headers = {
+    "Authorization": f"Bearer {HF_TOKEN}",
+    "Content-Type": "application/json"
+}
+
+async def query_huggingface_chat(user_input: str) -> str:
     payload = {
+        "model": MODEL_NAME,
         "messages": [
             {
                 "role": "user",
-                "content": user_prompt
+                "content": user_input
             }
-        ],
-        "model": MODEL_ID
+        ]
     }
 
-    print("🚀 Надсилаємо запит до Hugging Face...")
-    print("🔑 TOKEN:", HF_TOKEN[:10] + "..." if HF_TOKEN else "❌ Немає токена")
-
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30) as client:
         try:
-            response = await client.post(API_URL, headers=headers, json=payload, timeout=60.0)
-            print("📡 Status Code:", response.status_code)
-            print("📦 Raw text:", response.text)
-
-
-            if response.status_code == 200:
-                result = response.json()
-                message = result["choices"][0]["message"]
-                full_content = message.get("content", "")
-
-                if '</think>' in full_content:
-                    reply = full_content.split('</think>')[-1].strip()
-                else:
-                    reply = full_content.split('\n\n')[-1].strip()
-
-                return reply
-            else:
-                print("⚠️ HuggingFace response:", response.text)
-                return f"⚠️ Hugging Face помилка: {response.status_code}"
-
-
+            response = await client.post(API_URL, headers=headers, json=payload)
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"]
         except Exception as e:
-            print("❌ Виняток під час запиту:", str(e))  # ← вже є, але e може бути пустим
-            print("📦 Повна відповідь (можливо недоступна):", response.text if 'response' in locals() else 'response is undefined')
-            return "На жаль, щось пішло не так 😔"
+            return f"⚠️ Помилка при запиті до ШІ: {e}"
 
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
