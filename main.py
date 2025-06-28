@@ -25,11 +25,17 @@ headers = {
     "Content-Type": "application/json"
 }
 
-async def query_openrouter_chat(messages: list[dict]) -> str:
+async def query_openrouter_chat(user_input: str) -> str:
     payload = {
-        "model": "mistralai/mistral-small-3.2-24b-instruct:free",
-        "messages": messages
+        "model": MODEL_NAME,
+        "messages": [
+            {
+                "role": "user",
+                "content": user_input
+            }
+        ]
     }
+
 
     async with httpx.AsyncClient(timeout=30) as client:
         try:
@@ -156,7 +162,7 @@ async def telegram_webhook(request: Request):
         # messages.append({"role": "user", "content": user_text})
         
         # 2. Отримати відповідь від ШІ
-        response_text = await query_openrouter_chat(messages)
+        response_text = await query_openrouter_chat(user_text)
 
         print("👤 response_text:", response_text)
         
