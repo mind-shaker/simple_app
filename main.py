@@ -126,7 +126,7 @@ async def telegram_webhook(request: Request):
         # В іншому випадку — надсилаємо запит до ШІ
         # Надсилаємо повідомлення і зберігаємо його
         thinking_msg = await bot.send_message(chat_id=chat_id, text="🧠 Думаю...")
-        response_text = await query_huggingface(user_text)
+        response_text = await query_huggingface_chat(user_text)
         # Видаляємо повідомлення, якщо воно ще є
         try:
             await thinking_msg.delete()
