@@ -141,6 +141,8 @@ async def telegram_webhook(request: Request):
         
         # 2. Отримати відповідь від ШІ
         response_text = await query_openrouter_chat(user_text)
+
+        print("👤 response_text:", response_text)
         
         # 3. Зберегти відповідь ШІ
         await conn.execute(
