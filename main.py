@@ -25,15 +25,10 @@ headers = {
     "Content-Type": "application/json"
 }
 
-async def query_openrouter_chat(user_input: str) -> str:
+async def query_openrouter_chat(messages: list[dict]) -> str:
     payload = {
         "model": "mistralai/mistral-small-3.2-24b-instruct:free",
-        "messages": [
-            {
-                "role": "user",
-                "content": user_input
-            }
-        ]
+        "messages": messages
     }
 
     async with httpx.AsyncClient(timeout=30) as client:
@@ -142,9 +137,22 @@ async def telegram_webhook(request: Request):
             "INSERT INTO dialogs (user_id, role, message, created_at) VALUES ($1, 'user', $2, NOW())",
             db_user_id, user_text
         )
+
+        # 1.5 Готуємо контекст останніх 10 повідомлень в одне
+        # Отримуємо останні 10 повідомлень користувача
+        rows = await conn.fetch(
+            "SELECT role, message FROM dialogs WHERE user_id = $1 ORDER BY id ASC LIMIT 10",
+            db_user_id
+        )
+
+        # Формуємо масив у форматі, який розуміє Hugging Face API
+        messages = [{"role": row["role"], "content": row["message"]} for row in rows]
+        
+        # Додаємо нове повідомлення користувача (перед відправкою до ШІ)
+        messages.append({"role": "user", "content": user_text})
         
         # 2. Отримати відповідь від ШІ
-        response_text = await query_openrouter_chat(user_text)
+        response_text = await query_openrouter_chat(messages)
 
         print("👤 response_text:", response_text)
         
