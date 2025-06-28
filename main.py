@@ -38,7 +38,7 @@ async def query_openrouter_chat(messages: list[dict]) -> str:
             response.raise_for_status()
             
             data = response.json()
-            print("📦 JSON-data:", data)
+            # print("📦 JSON-data:", data)
             # Відповідь у форматі OpenAI-like: беремо text з choices[0].message.content
             return data["choices"][0]["message"]["content"]
         except Exception as e:
