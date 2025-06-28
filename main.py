@@ -27,7 +27,7 @@ headers = {
 
 async def query_openrouter_chat(user_input: str) -> str:
     payload = {
-        "model": "mistralai/mistral-small-3.2-24b-instruct:free",
+        "model": "moonshotai/kimi-dev-72b:free",
         "messages": [
             {
                 "role": "user",
