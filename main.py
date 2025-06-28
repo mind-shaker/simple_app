@@ -10,24 +10,23 @@ async def get_connection():
     return await asyncpg.connect(DATABASE_URL)
 
 # Змінні середовища
-HF_TOKEN = os.getenv("HF_TOKEN")
+API_KEY = os.getenv("OPENROUTER_API_KEY")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 bot = Bot(token=TELEGRAM_TOKEN)
 app = FastAPI()
 
-HF_TOKEN = os.getenv("HF_TOKEN")  # або встав напряму: "hf_..."
-API_URL = "https://router.huggingface.co/featherless-ai/v1/chat/completions"
-MODEL_NAME = "Skywork/Skywork-SWE-32B"
+
+API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 headers = {
-    "Authorization": f"Bearer {HF_TOKEN}",
+    "Authorization": f"Bearer {API_KEY}",
     "Content-Type": "application/json"
 }
 
-async def query_huggingface_chat(user_input: str) -> str:
+async def query_openrouter_chat(user_input: str) -> str:
     payload = {
-        "model": MODEL_NAME,
+        "model": "openai/gpt-3.5-turbo-0613",
         "messages": [
             {
                 "role": "user",
@@ -41,9 +40,10 @@ async def query_huggingface_chat(user_input: str) -> str:
             response = await client.post(API_URL, headers=headers, json=payload)
             response.raise_for_status()
             data = response.json()
+            # Відповідь у форматі OpenAI-like: беремо text з choices[0].message.content
             return data["choices"][0]["message"]["content"]
         except Exception as e:
-            return f"⚠️ Помилка при запиті до ШІ: {e}"
+            return f"⚠️ Помилка при запиті до OpenRouter API: {e}"
 
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
@@ -126,7 +126,7 @@ async def telegram_webhook(request: Request):
         # В іншому випадку — надсилаємо запит до ШІ
         # Надсилаємо повідомлення і зберігаємо його
         thinking_msg = await bot.send_message(chat_id=chat_id, text="🧠 Думаю...")
-        response_text = await query_huggingface_chat(user_text)
+        response_text = await query_openrouter_chat(user_text)
         # Видаляємо повідомлення, якщо воно ще є
         try:
             await thinking_msg.delete()
