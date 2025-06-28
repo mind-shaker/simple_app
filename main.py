@@ -80,8 +80,7 @@ async def telegram_webhook(request: Request):
             print("⚠️ Неможливо вставити користувача: user_id = None")
             return {"status": "skipped_null_user"}
 
-        # Перечитуємо користувача після оновлень
-        existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)        
+                
 
         # Обробка /start
         if user_text.strip().lower() == "/start":
@@ -108,7 +107,8 @@ async def telegram_webhook(request: Request):
             await bot.send_message(chat_id=chat_id, text=f"✅ Мову збережено: {lang_code}")
             mark = 1
 
-        
+        # Перечитуємо користувача після оновлень
+        existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
 
         # Перевірка порожнього або пробільного поля country
         country = existing_user["country"]
