@@ -150,7 +150,7 @@ async def telegram_webhook(request: Request):
         
         # 3. Зберегти відповідь ШІ
         await conn.execute(
-            "INSERT INTO dialogs (user_id, role, message, created_at) VALUES ($1, 'user', $2, NOW())",
+            "INSERT INTO dialogs (user_id, role, message, created_at) VALUES ($1, 'ai', $2, NOW())",
             db_user_id, response_text
         )
 
