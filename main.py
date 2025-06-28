@@ -153,7 +153,7 @@ async def telegram_webhook(request: Request):
         messages = [{"role": row["role"], "content": row["message"]} for row in rows]
         
         # Додаємо нове повідомлення користувача (перед відправкою до ШІ)
-        messages.append({"role": "user", "content": user_text})
+        # messages.append({"role": "user", "content": user_text})
         
         # 2. Отримати відповідь від ШІ
         response_text = await query_openrouter_chat(messages)
