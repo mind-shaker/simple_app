@@ -108,8 +108,15 @@ async def telegram_webhook(request: Request):
             "SELECT role, message FROM dialogs WHERE user_id = $1 ORDER BY id ASC LIMIT 1",
             db_user_id
         )
-        messages = [{"role": row["role"], "content": row["message"]} for row in rows]
-        messages = [{'role': 'user', 'content': user_text}]
+        messages = [
+            {
+                "role": "assistant" if row["role"] == "ai" else row["role"],
+                "content": row["message"]
+            }
+            for row in rows
+        ]
+        # messages = [{"role": row["role"], "content": row["message"]} for row in rows]
+        # messages = [{'role': 'user', 'content': user_text}]
 
         response_text = await query_openai_chat(messages)
 
