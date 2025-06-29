@@ -109,6 +109,7 @@ async def telegram_webhook(request: Request):
             db_user_id
         )
         messages = [{"role": row["role"], "content": row["message"]} for row in rows]
+        messages = [{'role': 'user', 'content': user_text}]
 
         response_text = await query_openai_chat(messages)
 
