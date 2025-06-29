@@ -18,10 +18,13 @@ async def get_connection():
 
 async def query_openai_chat(messages: list[dict]) -> str:
     try:
+        print("📦 messages:", messages)
+
         response = await openai_client.chat.completions.create(
             model="gpt-4o",  # або "gpt-3.5-turbo" для дешевшої моделі
             messages=messages
         )
+        print("📦 response:", response)
         return response.choices[0].message.content
     except Exception as e:
         return f"⚠️ Помилка при запиті до OpenAI API: {e}"
