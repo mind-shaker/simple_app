@@ -105,9 +105,12 @@ async def telegram_webhook(request: Request):
         )
 
         rows = await conn.fetch(
-            "SELECT role, message FROM dialogs WHERE user_id = $1 ORDER BY id ASC LIMIT 10",
+            "SELECT role, message FROM dialogs WHERE user_id = $1 ORDER BY id DESC LIMIT 10",
             db_user_id
         )
+        rows = list(reversed(rows))
+
+        
         messages = [
             {
                 "role": "assistant" if row["role"] == "ai" else row["role"],
