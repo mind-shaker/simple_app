@@ -105,7 +105,7 @@ async def telegram_webhook(request: Request):
         )
 
         rows = await conn.fetch(
-            "SELECT role, message FROM dialogs WHERE user_id = $1 ORDER BY id ASC LIMIT 1",
+            "SELECT role, message FROM dialogs WHERE user_id = $1 ORDER BY id ASC LIMIT 10",
             db_user_id
         )
         messages = [
