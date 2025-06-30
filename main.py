@@ -288,10 +288,53 @@ async def telegram_webhook(request: Request):
             profile_content = "{}"
         else:
             # Припустимо, що профіль у таблиці збережений у полі profile_json у вигляді JSON рядка
-            profile_content = profile_row["profile_json"]
+            # Збираємо словник із профілем
+            profile_content = {
+                "name": profile_row["name"],
+                "age": profile_row["age"],
+                "country": profile_row["country"],
+                "difficulty_level": profile_row["difficulty_level"],
+                "religious_context": profile_row["religious_context"],
+                "personality": profile_row["personality"],
+                "barriers": profile_row["barriers"],  # якщо список — залишаємо
+                "openness": profile_row["openness"],
+                "goal": profile_row["goal"],
+                "big_five_traits": json.loads(profile_row["big_five_traits"]),
+                "temperament": profile_row["temperament"],
+                "worldview_and_values": profile_row["worldview_and_values"],
+                "beliefs": profile_row["beliefs"],
+                "motivation_and_goals": profile_row["motivation_and_goals"],
+                "background": profile_row["background"],
+                "erikson_stage": profile_row["erikson_stage"],
+                "emotional_intelligence": profile_row["emotional_intelligence"],
+                "thinking_style": profile_row["thinking_style"],
+                "biological_factors": profile_row["biological_factors"],
+                "social_context": profile_row["social_context"],
+                "enneagram": profile_row["enneagram"],
+                "disc_profile": profile_row["disc_profile"],
+                "stress_tolerance": profile_row["stress_tolerance"],
+                "self_image": profile_row["self_image"],
+                "cognitive_biases": profile_row["cognitive_biases"],
+                "attachment_style": profile_row["attachment_style"],
+                "religion": profile_row["religion"],
+                "trauma_history": profile_row["trauma_history"],
+                "stress_level": profile_row["stress_level"],
+                "habits": profile_row["habits"],
+                "why_contacted_us": profile_row["why_contacted_us"],
+                "digital_behavior": profile_row["digital_behavior"],
+                "peer_pressure": profile_row["peer_pressure"],
+                "attachment_history": profile_row["attachment_history"],
+                "culture": profile_row["culture"],
+                "neuroprofile": profile_row["neuroprofile"],
+                "meta_programs": profile_row["meta_programs"],
+                "philosophical_views": profile_row["philosophical_views"],
+            }
+        
+            # перетворимо на гарно форматований текст
+            profile_content = json.dumps(profile_content, ensure_ascii=False, indent=2)
             print("📦 profile_content:", profile_content)
         
-        # Формуємо системне повідомлення з профілем
+        # Створюємо system prompt
         system_message = {
             "role": "system",
             "content": f"Assistant profile for this session:\n{profile_content}"
