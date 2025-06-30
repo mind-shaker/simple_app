@@ -270,13 +270,33 @@ async def telegram_webhook(request: Request):
         rows = list(reversed(rows))
 
         
-        messages = [
+        user_messages = [
             {
                 "role": "assistant" if row["role"] == "ai" else row["role"],
                 "content": row["message"]
             }
             for row in rows
         ]
+
+        # Витягнути профіль із бази для користувача (припустимо, user_id)
+        profile_row = await conn.fetchrow("SELECT * FROM simulated_personas WHERE user_id = $1", user_id)
+        if not profile_row:
+            # Якщо профілю немає, можеш повернути порожній список або дефолтний профіль
+            profile_content = "{}"
+        else:
+            # Припустимо, що профіль у таблиці збережений у полі profile_json у вигляді JSON рядка
+            profile_content = profile_row["profile_json"]
+        
+        # Формуємо системне повідомлення з профілем
+        system_message = {
+            "role": "system",
+            "content": f"Assistant profile for this session:\n{profile_content}"
+        }
+        
+        # Далі формуємо список повідомлень, додаємо system_message спочатку, потім user_messages
+        messages = [system_message] + user_messages
+
+    
         # messages = [{"role": row["role"], "content": row["message"]} for row in rows]
         # messages = [{'role': 'user', 'content': user_text}]
 
