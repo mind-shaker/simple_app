@@ -240,9 +240,20 @@ async def telegram_webhook(request: Request):
             return {"status": "data_updated"}
 
         db_user_id = existing_user["id"]
+        
         if user_text.strip().lower() == "/erasure":
             await conn.execute("DELETE FROM dialogs WHERE user_id = $1", db_user_id)
             await bot.send_message(chat_id=chat_id, text="🗑️ Всі ваші повідомлення видалено")
+            return
+
+        if user_text.strip().lower() == "/erasure_profile":
+            # Очищення всієї таблиці simulated_personas
+            await conn.execute("TRUNCATE TABLE simulated_personas;")
+            
+            # Можна додати ще видалення повідомлень користувача, якщо потрібно
+            # await conn.execute("DELETE FROM dialogs WHERE user_id = $1", db_user_id)
+            
+            await bot.send_message(chat_id=chat_id, text="🗑️ Таблиця з профілями успішно очищена")
             return
 
         thinking_msg = await bot.send_message(chat_id=chat_id, text="🧠 Думаю...")
