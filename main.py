@@ -70,7 +70,8 @@ async def telegram_webhook(request: Request):
             db_user_id = existing_user["id"] if existing_user else (await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id))["id"]
             existing_profile = await conn.fetchrow("SELECT * FROM simulated_personas WHERE user_id = $1", db_user_id)
             if not existing_profile:
-                sent_msg_ = await message.answer("Йде ініціалізація профілю...")
+                #sent_msg_ = await message.answer("Йде ініціалізація профілю...")
+                init_msg = await bot.send_message(chat_id=chat_id, text="Йде ініціалізація профілю..")
                 profile_reference = {
                       "name": "Mariam",
                       "age": 24,
@@ -206,7 +207,7 @@ async def telegram_webhook(request: Request):
                     persona.get("meta_programs"),
                     persona.get("philosophical_views"),
                 )
-                #await bot.delete_message(chat_id=message.chat.id, message_id=sent_msg.message_id)
+                await init_msg.delete()
                 await bot.send_message(chat_id=chat_id, text="✅ Профіль користувача згенеровано і збережено.")    
             else:
                 await bot.send_message(chat_id=chat_id, text="✅ Профіль персони для симуляції вже існує. Продовжимо діалог.")
