@@ -282,10 +282,12 @@ async def telegram_webhook(request: Request):
         profile_row = await conn.fetchrow("SELECT * FROM simulated_personas WHERE user_id = $1", user_id)
         if not profile_row:
             # Якщо профілю немає, можеш повернути порожній список або дефолтний профіль
+            print("📦 profile is empty:")
             profile_content = "{}"
         else:
             # Припустимо, що профіль у таблиці збережений у полі profile_json у вигляді JSON рядка
             profile_content = profile_row["profile_json"]
+            print("📦 profile_content:", profile_content)
         
         # Формуємо системне повідомлення з профілем
         system_message = {
