@@ -131,6 +131,7 @@ async def telegram_webhook(request: Request):
                   5 — Провокативний, агресивний, теологічно підкований
 
                 Відповідь дай у форматі JSON, без жодних пояснень.
+                Без коду markdown, тільки JSON.
                 """
                 messages = [
                     {"role": "system", "content": system_prompt}
