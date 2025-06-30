@@ -3,6 +3,7 @@ from telegram import Bot
 import os
 import asyncpg
 from openai import AsyncOpenAI
+import json
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -29,6 +30,9 @@ async def query_openai_chat(messages: list[dict]) -> str:
     except Exception as e:
         return f"⚠️ Помилка при запиті до OpenAI API: {e}"
 
+
+
+
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
     data = await request.json()
@@ -44,7 +48,6 @@ async def telegram_webhook(request: Request):
     full_name = f"{first_name} {last_name}".strip()
 
     mark = 0
-
     conn = await get_connection()
     try:
         existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
@@ -61,8 +64,106 @@ async def telegram_webhook(request: Request):
             print("⚠️ Неможливо вставити користувача: user_id = None")
             return {"status": "skipped_null_user"}
 
+
         if user_text.strip().lower() == "/start":
-            await bot.send_message(chat_id=chat_id, text="✅ Ви вже в системі. Продовжимо 👇")
+            # Якщо профіль вже є, пропускаємо створення
+            db_user_id = existing_user["id"] if existing_user else (await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id))["id"]
+            existing_profile = await conn.fetchrow("SELECT * FROM simulated_personas WHERE user_id = $1", db_user_id)
+            if not existing_profile:
+                profile_reference = {
+                    # Твій json як у прикладі
+                }
+                system_prompt = f"""
+                Ти — помічник, який створює психологічні профілі вигаданих людей.  
+                Ось приклад профілю, на основі якого потрібно згенерувати схожий профіль, але з іншими значеннями:  
+                {json.dumps(profile_reference, ensure_ascii=False, indent=2)}
+
+                Згенеруй новий профіль, використовуючи подібну структуру та формат, але з новими значеннями, які логічно відповідають полям.  
+                Поле difficulty_level має бути одним із: 
+                  1 — Відкритий, з легким духовним запитом  
+                  2 — Сумніваючийся, шукає, але з бар'єрами  
+                  3 — Емоційно травмований, закритий, критичний  
+                  4 — Ворожий або апатичний, з негативним особистим досвідом  
+                  5 — Провокативний, агресивний, теологічно підкований
+
+                Відповідь дай у форматі JSON, без жодних пояснень.
+                """
+                messages = [
+                    {"role": "system", "content": system_prompt}
+                ]
+                response = await query_openai_chat(messages=messages)
+                
+                # Парсимо json відповідь від чату
+                try:
+                    persona = json.loads(response)
+                except Exception as e:
+                    await bot.send_message(chat_id=chat_id, text=f"❌ Помилка парсингу профілю: {e}")
+                    return {"status": "error_parsing_profile"}
+
+                # Вставляємо в базу
+                await conn.execute(
+                    """
+                    INSERT INTO simulated_personas (
+                        user_id, name, age, country, difficulty_level, religious_context, personality,
+                        barriers, openness, goal, big_five_traits, temperament, worldview_and_values,
+                        beliefs, motivation_and_goals, background, erikson_stage, emotional_intelligence,
+                        thinking_style, biological_factors, social_context, enneagram, disc_profile,
+                        stress_tolerance, self_image, cognitive_biases, attachment_style, religion,
+                        trauma_history, stress_level, habits, why_contacted_us, digital_behavior,
+                        peer_pressure, attachment_history, culture, neuroprofile, meta_programs, philosophical_views
+                    ) VALUES (
+                        $1, $2, $3, $4, $5, $6, $7,
+                        $8, $9, $10, $11, $12, $13,
+                        $14, $15, $16, $17, $18,
+                        $19, $20, $21, $22, $23,
+                        $24, $25, $26, $27, $28,
+                        $29, $30, $31, $32, $33,
+                        $34, $35, $36, $37, $38, $39
+                    )
+                    """,
+                    db_user_id,
+                    persona.get("name"),
+                    persona.get("age"),
+                    persona.get("country"),
+                    persona.get("difficulty_level"),
+                    persona.get("religious_context"),
+                    persona.get("personality"),
+                    persona.get("barriers"),
+                    persona.get("openness"),
+                    persona.get("goal"),
+                    json.dumps(persona.get("big_five_traits")),
+                    persona.get("temperament"),
+                    persona.get("worldview_and_values"),
+                    persona.get("beliefs"),
+                    persona.get("motivation_and_goals"),
+                    persona.get("background"),
+                    persona.get("erikson_stage"),
+                    persona.get("emotional_intelligence"),
+                    persona.get("thinking_style"),
+                    persona.get("biological_factors"),
+                    persona.get("social_context"),
+                    persona.get("enneagram"),
+                    persona.get("disc_profile"),
+                    persona.get("stress_tolerance"),
+                    persona.get("self_image"),
+                    persona.get("cognitive_biases"),
+                    persona.get("attachment_style"),
+                    persona.get("religion"),
+                    persona.get("trauma_history"),
+                    persona.get("stress_level"),
+                    persona.get("habits"),
+                    persona.get("why_contacted_us"),
+                    persona.get("digital_behavior"),
+                    persona.get("peer_pressure"),
+                    persona.get("attachment_history"),
+                    persona.get("culture"),
+                    persona.get("neuroprofile"),
+                    persona.get("meta_programs"),
+                    persona.get("philosophical_views"),
+                )
+                await bot.send_message(chat_id=chat_id, text="✅ Профіль користувача згенеровано і збережено.")    
+            else:
+                await bot.send_message(chat_id=chat_id, text="✅ Профіль персони для симуляції вже існує. Продовжимо діалог.")
             mark = 1
 
         if user_text.lower().startswith("/country="):
