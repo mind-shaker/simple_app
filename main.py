@@ -19,13 +19,13 @@ async def get_connection():
 
 async def query_openai_chat(messages: list[dict]) -> str:
     try:
-        print("📦 messages:", messages)
+        #print("📦 messages:", messages)
 
         response = await openai_client.chat.completions.create(
             model="gpt-4o",  # або "gpt-3.5-turbo" для дешевшої моделі (gpt-4o)
             messages=messages
         )
-        print("📦 response:", response)
+        #print("📦 response:", response)
         return response.choices[0].message.content
     except Exception as e:
         return f"⚠️ Помилка при запиті до OpenAI API: {e}"
@@ -281,7 +281,7 @@ async def telegram_webhook(request: Request):
         print("📦 user_id:", db_user_id)
         # Витягнути профіль із бази для користувача (припустимо, user_id)
         profile_row = await conn.fetchrow("SELECT * FROM simulated_personas WHERE user_id = $1", db_user_id)
-        print("📦 profile_row:", profile_row)
+        #print("📦 profile_row:", profile_row)
         if not profile_row:
             # Якщо профілю немає, можеш повернути порожній список або дефолтний профіль
             print("📦 profile is empty:")
@@ -332,7 +332,7 @@ async def telegram_webhook(request: Request):
         
             # перетворимо на гарно форматований текст
             profile_content = json.dumps(profile_content, ensure_ascii=False, indent=2)
-            print("📦 profile_content:", profile_content)
+            #print("📦 profile_content:", profile_content)
         
         # Створюємо system prompt
         system_message = {
