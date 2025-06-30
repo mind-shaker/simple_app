@@ -70,8 +70,52 @@ async def telegram_webhook(request: Request):
             db_user_id = existing_user["id"] if existing_user else (await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id))["id"]
             existing_profile = await conn.fetchrow("SELECT * FROM simulated_personas WHERE user_id = $1", db_user_id)
             if not existing_profile:
+                sent_msg = await message.answer("Йде ініціалізація профілю...")
                 profile_reference = {
-                    # Твій json як у прикладі
+                      "name": "Mariam",
+                      "age": 24,
+                      "country": "Egypt",
+                      "difficulty_level": "1–5",
+                      "religious_context": "muslim",
+                      "personality": "Skeptical but emotionally open",
+                      "barriers": ["God and suffering", "trust in religion"],
+                      "openness": "Medium",
+                      "goal": "To see if God is real and personal",
+                      "big_five_traits": {
+                        "openness": "high",
+                        "conscientiousness": "medium",
+                        "extraversion": "low",
+                        "agreeableness": "medium",
+                        "neuroticism": "high"
+                      },
+                      "temperament": "Melancholic",
+                      "worldview_and_values": ["Humanism", "Skepticism"],
+                      "beliefs": ["Religion is man-made", "God may exist but is distant"],
+                      "motivation_and_goals": ["Find meaning after loss", "Reconnect with hope"],
+                      "background": "Grew up in nominal faith, lost friend in accident",
+                      "erikson_stage": "Young adulthood — Intimacy vs. Isolation",
+                      "emotional_intelligence": "Moderate",
+                      "thinking_style": "Analytical with emotional interference",
+                      "biological_factors": ["Sleep-deprived", "Hormonal imbalance"],
+                      "social_context": ["Urban Egyptian culture", "Peers secular"],
+                      "enneagram": "Type 4 — Individualist",
+                      "disc_profile": "C — Conscientious",
+                      "stress_tolerance": "Low",
+                      "self_image": "Feels broken, searching for healing",
+                      "cognitive_biases": ["Confirmation bias", "Negativity bias"],
+                      "attachment_style": "Anxious-preoccupied",
+                      "religion": "Nominal Christian",
+                      "trauma_history": "Friend's death in accident — unresolved",
+                      "stress_level": "High",
+                      "habits": ["Night owl", "Avoids social events"],
+                      "why_contacted_us": "Saw Christian video that made her cry",
+                      "digital_behavior": ["Active on Instagram", "Searches for spiritual content"],
+                      "peer_pressure": ["Friends mock faith"],
+                      "attachment_history": "Emotionally distant parents (based on Bowlby theory)",
+                      "culture": "Middle Eastern / Egyptian",
+                      "neuroprofile": "Sensitive limbic response",
+                      "meta_programs": ["Away-from motivation", "External validation"],
+                      "philosophical_views": ["Existentialism", "Skepticism"]
                 }
                 system_prompt = f"""
                 Ти — помічник, який створює психологічні профілі вигаданих людей.  
@@ -161,6 +205,7 @@ async def telegram_webhook(request: Request):
                     persona.get("meta_programs"),
                     persona.get("philosophical_views"),
                 )
+                await bot.delete_message(chat_id=message.chat.id, message_id=sent_msg.message_id)
                 await bot.send_message(chat_id=chat_id, text="✅ Профіль користувача згенеровано і збережено.")    
             else:
                 await bot.send_message(chat_id=chat_id, text="✅ Профіль персони для симуляції вже існує. Продовжимо діалог.")
