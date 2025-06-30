@@ -22,7 +22,7 @@ async def query_openai_chat(messages: list[dict]) -> str:
         print("📦 messages:", messages)
 
         response = await openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",  # або "gpt-3.5-turbo" для дешевшої моделі (gpt-4o)
+            model="gpt-4o",  # або "gpt-3.5-turbo" для дешевшої моделі (gpt-4o)
             messages=messages
         )
         print("📦 response:", response)
