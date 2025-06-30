@@ -70,7 +70,7 @@ async def telegram_webhook(request: Request):
             db_user_id = existing_user["id"] if existing_user else (await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id))["id"]
             existing_profile = await conn.fetchrow("SELECT * FROM simulated_personas WHERE user_id = $1", db_user_id)
             if not existing_profile:
-                #sent_msg = await message.answer("Йде ініціалізація профілю...")
+                sent_msg_ = await message.answer("Йде ініціалізація профілю...")
                 profile_reference = {
                       "name": "Mariam",
                       "age": 24,
@@ -82,11 +82,11 @@ async def telegram_webhook(request: Request):
                       "openness": "Medium",
                       "goal": "To see if God is real and personal",
                       "big_five_traits": {
-                        "openness": "high",
-                        "conscientiousness": "medium",
-                        "extraversion": "low",
-                        "agreeableness": "medium",
-                        "neuroticism": "high"
+                            "openness": "high",
+                            "conscientiousness": "medium",
+                            "extraversion": "low",
+                            "agreeableness": "medium",
+                            "neuroticism": "high"
                       },
                       "temperament": "Melancholic",
                       "worldview_and_values": ["Humanism", "Skepticism"],
