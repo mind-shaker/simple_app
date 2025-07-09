@@ -50,8 +50,10 @@ async def telegram_webhook(request: Request):
     mark = 0
     conn = await get_connection()
     try:
+        # перевірка чи існує в таблиці користувачів поточний користувач user_id в полі таблиці telegram_id. existing_user - це массив значень по користувачу
         existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
 
+        # процедура створення нового користувача і заповнення полів telegram_id, username, full_name отриманими з телеграму даними user_id, username, full_name
         if user_id is not None:
             if not existing_user:
                 await conn.execute(
@@ -66,7 +68,7 @@ async def telegram_webhook(request: Request):
 
 
         if user_text.strip().lower() == "/start":
-            # Якщо профіль вже є, пропускаємо створення
+            # Якщо профіль вже є, пропускаємо створення. В db_user_id вноситься внутрішній первинний ключ у базі existing_user["id"] якщо користувач вже був зареєстрований, якщо ж користувач щойно створений то значення беремо з поля  
             db_user_id = existing_user["id"] if existing_user else (await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id))["id"]
             existing_profile = await conn.fetchrow("SELECT * FROM simulated_personas WHERE user_id = $1", db_user_id)
             if not existing_profile:
