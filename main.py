@@ -2,26 +2,20 @@ from fastapi import FastAPI, Request
 from telegram import Bot
 import os
 import asyncpg
-import redis
+import redis.asyncio as redis
 from openai import AsyncOpenAI
 import json
-import redis.asyncio as redis
-
-# далі в коді використовуй redis_client.set(...) і т.д.
-
-
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-REDIS_URL = os.getenv("REDIS_URL")  # url для підключення до Redis, наприклад redis://localhost
+REDIS_URL = os.getenv("REDIS_URL")  # наприклад, redis://localhost або redis://:password@host:port
 
 bot = Bot(token=TELEGRAM_TOKEN)
 app = FastAPI()
 
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
-# Пул підключень до Redis
 redis_client = None
 
 @app.on_event("startup")
@@ -48,7 +42,6 @@ async def query_openai_chat(messages: list[dict]) -> str:
     except Exception as e:
         return f"⚠️ Помилка при запиті до OpenAI API: {e}"
 
-
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
     data = await request.json()
@@ -65,13 +58,11 @@ async def telegram_webhook(request: Request):
 
     conn = await get_connection()
     try:
-        pass  # Весь код, що був всередині try, вилучений за твоїм проханням
+        pass  # ти просив прибрати всю логіку з try
     finally:
         await conn.close()
 
-    # Приклад: тут можна працювати з Redis (поки що без логіки)
-    # Наприклад, збережемо короткий ключ
-    if redis and user_id:
-        await redis.set(f"user:{user_id}:name", full_name)
+    if redis_client and user_id:
+        await redis_client.set(f"user:{user_id}:name", full_name)
 
     return {"status": "ok"}
