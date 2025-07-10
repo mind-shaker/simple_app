@@ -11,26 +11,44 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 REDIS_URL = os.getenv("REDIS_URL")  # наприклад, redis://localhost або redis://:password@host:port
 
+print("[INIT] Ініціалізація Telegram-бота...")
 bot = Bot(token=TELEGRAM_TOKEN)
+print("[✅] Telegram бот ініціалізований")
+
+print("[INIT] Ініціалізація FastAPI...")
 app = FastAPI()
 
+print("[INIT] Ініціалізація OpenAI клієнта...")
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+print("[✅] OpenAI клієнт ініціалізований")
 
 redis_client = None
 
 @app.on_event("startup")
 async def startup_event():
     global redis_client
+    print("[INIT] Підключення до Redis...")
     redis_client = redis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
+    try:
+        pong = await redis_client.ping()
+        if pong:
+            print("[✅] Redis підключено успішно")
+    except Exception as e:
+        print(f"[❌] Redis помилка: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     global redis_client
     if redis_client:
+        print("[SHUTDOWN] Закриття з'єднання Redis...")
         await redis_client.close()
+        print("[✅] Redis з'єднання закрито")
 
 async def get_connection():
-    return await asyncpg.connect(DATABASE_URL)
+    print("[INIT] Підключення до бази даних PostgreSQL...")
+    conn = await asyncpg.connect(DATABASE_URL)
+    print("[✅] Підключено до бази даних")
+    return conn
 
 async def query_openai_chat(messages: list[dict]) -> str:
     try:
@@ -63,13 +81,8 @@ async def telegram_webhook(request: Request):
         await conn.close()
 
     if redis_client and user_id:
-        # зберегти імʼя в Redis
         await redis_client.set(f"user:{user_id}:name", full_name)
-
-        # зчитати назад
         saved_name = await redis_client.get(f"user:{user_id}:name")
-
-        # вивести через print
         print(f"[REDIS] user:{user_id}:name → {saved_name}")
 
     return {"status": "ok"}
