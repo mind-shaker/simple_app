@@ -5,6 +5,11 @@ import asyncpg
 import redis
 from openai import AsyncOpenAI
 import json
+import redis.asyncio as redis
+
+# далі в коді використовуй redis_client.set(...) і т.д.
+
+
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -17,18 +22,18 @@ app = FastAPI()
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 # Пул підключень до Redis
-redis = None
+redis_client = None
 
 @app.on_event("startup")
 async def startup_event():
-    global redis
+    global redis_client
     redis_client = redis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    global redis
-    if redis:
-        await redis.close()
+    global redis_client
+    if redis_client:
+        await redis_client.close()
 
 async def get_connection():
     return await asyncpg.connect(DATABASE_URL)
