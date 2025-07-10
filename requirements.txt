@@ -4,3 +4,4 @@ httpx
 python-telegram-bot==20.7
 asyncpg
 openai
+aioredis
