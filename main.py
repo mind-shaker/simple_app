@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from telegram import Bot
 import os
 import asyncpg
-import aioredis
+import redis
 from openai import AsyncOpenAI
 import json
 
@@ -22,7 +22,7 @@ redis = None
 @app.on_event("startup")
 async def startup_event():
     global redis
-    redis = await aioredis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
+    redis_client = redis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
 
 @app.on_event("shutdown")
 async def shutdown_event():
