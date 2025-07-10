@@ -58,11 +58,18 @@ async def telegram_webhook(request: Request):
 
     conn = await get_connection()
     try:
-        pass  # ти просив прибрати всю логіку з try
+        pass
     finally:
         await conn.close()
 
     if redis_client and user_id:
+        # зберегти імʼя в Redis
         await redis_client.set(f"user:{user_id}:name", full_name)
+
+        # зчитати назад
+        saved_name = await redis_client.get(f"user:{user_id}:name")
+
+        # вивести через print
+        print(f"[REDIS] user:{user_id}:name → {saved_name}")
 
     return {"status": "ok"}
