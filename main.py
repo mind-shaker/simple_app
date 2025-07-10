@@ -9,46 +9,34 @@ import json
 DATABASE_URL = os.getenv("DATABASE_URL")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-REDIS_URL = os.getenv("REDIS_URL")  # наприклад, redis://localhost або redis://:password@host:port
+REDIS_URL = os.getenv("REDIS_URL")  # наприклад, redis://:password@host:port
 
-print("[INIT] Ініціалізація Telegram-бота...")
 bot = Bot(token=TELEGRAM_TOKEN)
-print("[✅] Telegram бот ініціалізований")
-
-print("[INIT] Ініціалізація FastAPI...")
 app = FastAPI()
 
-print("[INIT] Ініціалізація OpenAI клієнта...")
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-print("[✅] OpenAI клієнт ініціалізований")
 
 redis_client = None
 
 @app.on_event("startup")
 async def startup_event():
     global redis_client
-    print("[INIT] Підключення до Redis...")
-    redis_client = redis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
     try:
-        pong = await redis_client.ping()
-        if pong:
-            print("[✅] Redis підключено успішно")
+        redis_client = redis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
+        await redis_client.ping()
+        print("[REDIS] Підключення успішне!")
     except Exception as e:
-        print(f"[❌] Redis помилка: {e}")
+        print(f"[REDIS] Помилка підключення: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     global redis_client
     if redis_client:
-        print("[SHUTDOWN] Закриття з'єднання Redis...")
         await redis_client.close()
-        print("[✅] Redis з'єднання закрито")
+        print("[REDIS] Підключення закрите.")
 
 async def get_connection():
-    print("[INIT] Підключення до бази даних PostgreSQL...")
-    conn = await asyncpg.connect(DATABASE_URL)
-    print("[✅] Підключено до бази даних")
-    return conn
+    return await asyncpg.connect(DATABASE_URL)
 
 async def query_openai_chat(messages: list[dict]) -> str:
     try:
@@ -76,12 +64,14 @@ async def telegram_webhook(request: Request):
 
     conn = await get_connection()
     try:
-        pass
+        pass  # Код з бази даних вилучений за твоїм проханням
     finally:
         await conn.close()
 
     if redis_client and user_id:
+        # Записуємо у Redis
         await redis_client.set(f"user:{user_id}:name", full_name)
+        # Читаємо назад і виводимо у консоль
         saved_name = await redis_client.get(f"user:{user_id}:name")
         print(f"[REDIS] user:{user_id}:name → {saved_name}")
 
