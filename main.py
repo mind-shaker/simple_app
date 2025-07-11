@@ -217,7 +217,7 @@ async def telegram_webhook(request: Request):
                 "SELECT phrase_2 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
                 db_user_id
             )
-            
+            print(f"row name_1: {row}")
             text_phrase_2 = row["phrase_2"] if row else None
             text_phrase_2="✅ "+ text_phrase_2
             await bot.send_message(chat_id=chat_id, text=text_phrase_2)
@@ -230,6 +230,7 @@ async def telegram_webhook(request: Request):
                 "SELECT phrase_3 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
                 db_user_id
             )
+            print(f"row name_3: {row}")
             
             text_phrase_3 = row["phrase_3"] if row else None
             text_phrase_3="❌ "+text_phrase_3
@@ -269,6 +270,7 @@ async def telegram_webhook(request: Request):
                 "SELECT phrase_1 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
                 db_user_id
             )
+            print(f"row name: {row}")
             
             text_phrase_1 = row["phrase_1"] if row else None
             text_phrase_1="🔥 "+ text_phrase_1
