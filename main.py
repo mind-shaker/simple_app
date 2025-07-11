@@ -167,9 +167,9 @@ async def telegram_webhook(request: Request):
                     if line.startswith("- ")
                 )
 
-                # Заповнюємо до 9 елементів, якщо менше
+                # Заповнюємо до 15 елементів None, якщо менше
                 translated_phrases = list(translated_phrases)
-                while len(translated_phrases) < 9:
+                while len(translated_phrases) < 15:
                     translated_phrases.append(None)
 
 
@@ -177,12 +177,22 @@ async def telegram_webhook(request: Request):
                 #for phrase in translated_phrases:
                 #    if phrase:  # пропускаємо None
                 #        await bot.send_message(chat_id=chat_id, text=phrase)
+
                 
                 # Внесення у таблицю translated_phrases (решта фраз — NULL)
                 await conn.execute("""
-                    INSERT INTO translated_phrases (user_id, phrase_1, phrase_2, phrase_3, phrase_4, phrase_5, phrase_6, phrase_7, phrase_8, phrase_9)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-                """, db_user_id, *translated_phrases[:9])
+                    INSERT INTO translated_phrases (
+                        user_id,
+                        phrase_1, phrase_2, phrase_3, phrase_4, phrase_5,
+                        phrase_6, phrase_7, phrase_8, phrase_9, phrase_10,
+                        phrase_11, phrase_12, phrase_13, phrase_14, phrase_15
+                    ) VALUES (
+                        $1, $2, $3, $4, $5,
+                        $6, $7, $8, $9, $10,
+                        $11, $12, $13, $14, $15
+                    )
+                """, db_user_id, *translated_phrases[:15])
+
 
           
                 await conn.execute(
