@@ -91,10 +91,12 @@ async def telegram_webhook(request: Request):
             return {"status": "skipped_null_user"}
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        db_user_id = existing_user["id"] if existing_user else (await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id))["id"]
+
         #////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО МОВУ СПІЛКУВАННЯ ////////////////////////////////////
         command_value = await conn.fetchval(
             "SELECT command FROM user_commands WHERE user_id = $1",
-            user_id
+            db_user_id
         )
         print(f"Current command: {command_value}")
         if command_value == 'language':
@@ -114,13 +116,13 @@ async def telegram_webhook(request: Request):
             if len(language_code) == 3 and language_code.isalpha():
                 # Save to DB
                 await conn.execute(
-                    "UPDATE users SET language = $1 WHERE user_id = $2",
+                    "UPDATE users SET language = $1 WHERE id = $2",
                     language_code, user_id
                 )
                 await bot.send_message(chat_id=chat_id, text=f"✅ Language saved: {language_code}")
                 await conn.execute(
                     "UPDATE user_commands SET command = NULL WHERE user_id = $1",
-                    user_id
+                    db_user_id
                 )
             else:
                 await bot.send_message(chat_id=chat_id, text=f"❌ Invalid language receive")
@@ -138,7 +140,7 @@ async def telegram_webhook(request: Request):
             await conn.execute("""
                 INSERT INTO user_commands (user_id, command)
                 VALUES ($1, $2)
-            """, user_id, "language")
+            """, db_user_id, "language")
             await bot.send_message(
                 chat_id=chat_id,
                 text="🔥 Enter your language",
