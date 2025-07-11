@@ -125,7 +125,7 @@ async def telegram_webhook(request: Request):
 
 
                 # Отримуємо мову користувача з бази
-                row = await conn.fetchrow("SELECT language FROM users WHERE user_id = $1", db_user_id)
+                row = await conn.fetchrow("SELECT language FROM users WHERE id = $1", db_user_id)
                 language = row["language"] if row else "Ukrainian"
                 
                 # Набір англійських фраз
