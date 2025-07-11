@@ -120,6 +120,8 @@ async def telegram_webhook(request: Request):
                     language_code, db_user_id
                 )
                 await bot.send_message(chat_id=chat_id, text=f"✅ Language saved: {language_code}")
+                await bot.send_message(chat_id=chat_id, text=f"✅ Switching to your language of communication.")
+                
                 await conn.execute(
                     "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                     db_user_id
