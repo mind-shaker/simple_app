@@ -73,6 +73,7 @@ async def telegram_webhook(request: Request):
     #-------------------------- Робота з базою (вилучено):
     conn = await get_connection() #++++++++++++++++++++++ ВИКЛИК ФУНКЦІЇ "Отримання з'єднання з PostgreSQL" 0 +++++++++++++++++++
     try:
+        #///////////////////////////////////////// ТЕСТ НА ПЕРШИЙ ВХІД В БОТА //////////////////////////////////////////////
         # перевірка чи існує в таблиці користувачів поточний користувач user_id в полі таблиці telegram_id. existing_user - це массив значень по користувачу
         existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
 
@@ -88,6 +89,64 @@ async def telegram_webhook(request: Request):
         else:
             print("⚠️ Неможливо вставити користувача: user_id = None")
             return {"status": "skipped_null_user"}
+        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        #////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО МОВУ СПІЛКУВАННЯ ////////////////////////////////////
+        command_value = await conn.fetchval(
+            "SELECT command FROM user_commands WHERE user_id = $1",
+            user_id
+        )
+        print(f"Current command: {command_value}")
+        if command_value == 'language':
+            messages = [
+                {"role": "system", "content": "You are a language conversion service."},
+                {
+                    "role": "user",
+                    "content": f'Provide the ISO 639-2 three-letter code for this language: "{user_text}". Return only the code, without additional words.'
+                }
+            ]
+        
+            # Get response from OpenAI in English
+            language_code = await query_openai_chat(messages)
+            language_code = language_code.strip().lower()
+        
+            # Validate the code
+            if len(language_code) == 3 and language_code.isalpha():
+                # Save to DB
+                await conn.execute(
+                    "UPDATE users SET language = $1 WHERE user_id = $2",
+                    language_code, user_id
+                )
+                await bot.send_message(chat_id=chat_id, text=f"✅ Language saved: {language_code}")
+                await conn.execute(
+                    "UPDATE user_commands SET command = NULL WHERE user_id = $1",
+                    user_id
+                )
+            else:
+                await bot.send_message(chat_id=chat_id, text=f"❌ Invalid language receive")
+
+            mark = 1
+
+        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
+
+        #=========================================== ФУНКЦІЇ ПОШУКУ НЕВИЗНАЧЕНИХ ХАРАКТЕРИСТИК =============================
+
+        #////////////////////////////// ТЕСТ комірки ПРО МОВУ СПІЛКУВАННЯ ////////////////////////////////////
+        if not existing_user["language"]:
+            await conn.execute("""
+                INSERT INTO user_commands (user_id, command)
+                VALUES ($1, $2)
+            """, user_id, "language")
+            await bot.send_message(
+                chat_id=chat_id,
+                text="🔥 Enter your language",
+                parse_mode="Markdown"
+            )
+            return {"status": "waiting_language"}
+
+        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
     finally:
