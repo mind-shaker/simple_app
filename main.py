@@ -117,7 +117,7 @@ async def telegram_webhook(request: Request):
                 # Save to DB
                 await conn.execute(
                     "UPDATE users SET language = $1 WHERE id = $2",
-                    language_code, user_id
+                    language_code, db_user_id
                 )
                 await bot.send_message(chat_id=chat_id, text=f"✅ Language saved: {language_code}")
                 await conn.execute(
