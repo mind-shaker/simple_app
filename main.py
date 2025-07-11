@@ -151,6 +151,8 @@ async def telegram_webhook(request: Request):
                 
                 # Відправляємо запит
                 response_text = await query_openai_chat(messages)
+
+                print(f"Text_from_GPT : {response_text}")
                 
                 # Розбираємо результат у кортеж
                 translated_phrases = tuple(
