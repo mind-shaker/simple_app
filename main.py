@@ -83,7 +83,7 @@ async def telegram_webhook(request: Request):
                     "INSERT INTO users (telegram_id, username, full_name) VALUES ($1, $2, $3)",
                     user_id, username, full_name
                 )
-                await bot.send_message(chat_id=chat_id, text="👋 Вітаю! Ви додані в систему.")
+                await bot.send_message(chat_id=chat_id, text="👋 Welcome! You are our new user.\nTo set up your profile, please answer a few questions.")
                 mark = 1
         else:
             print("⚠️ Неможливо вставити користувача: user_id = None")
