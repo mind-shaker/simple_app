@@ -240,6 +240,7 @@ async def telegram_webhook(request: Request):
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
+        print(f"existing_user: {existing_user}")
 
         #=========================================== ФУНКЦІЇ ПОШУКУ НЕВИЗНАЧЕНИХ ХАРАКТЕРИСТИК =============================
 
