@@ -133,9 +133,13 @@ async def telegram_webhook(request: Request):
                 # Набір англійських фраз
                 phrases = (
                     "Please enter your name.",
+                    "Name saved.",
+                    "Invalid input",
                     "Which country are you from?",
+                    "Country name saved.",
                     "Would you like me to automatically generate the characteristics of your conversation partner?",
                     "Please describe your conversation partner.",
+                    "Conversation partner's profile generated.",
                     "Let's chat!"
                 )
                 
@@ -163,9 +167,9 @@ async def telegram_webhook(request: Request):
                     if line.startswith("- ")
                 )
 
-                # Заповнюємо до 5 елементів, якщо менше
+                # Заповнюємо до 9 елементів, якщо менше
                 translated_phrases = list(translated_phrases)
-                while len(translated_phrases) < 5:
+                while len(translated_phrases) < 9:
                     translated_phrases.append(None)
 
 
@@ -176,9 +180,9 @@ async def telegram_webhook(request: Request):
                 
                 # Внесення у таблицю translated_phrases (решта фраз — NULL)
                 await conn.execute("""
-                    INSERT INTO translated_phrases (user_id, phrase_1, phrase_2, phrase_3, phrase_4, phrase_5)
-                    VALUES ($1, $2, $3, $4, $5, $6)
-                """, db_user_id, *translated_phrases[:5])
+                    INSERT INTO translated_phrases (user_id, phrase_1, phrase_2, phrase_3, phrase_4, phrase_5, phrase_6, phrase_7, phrase_8, phrase_9)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                """, db_user_id, *translated_phrases[:9])
 
           
                 await conn.execute(
@@ -198,13 +202,26 @@ async def telegram_webhook(request: Request):
                 "UPDATE users SET name = $1 WHERE id = $2",
                 user_text, db_user_id
             )
-            await bot.send_message(chat_id=chat_id, text=f"✅ Name saved: {name}")
+
+            row = await conn.fetchrow(
+                "SELECT phrase_2 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
+                db_user_id
+            )
+            
+            text_phrase_2 = row["phrase_2"] if row else None
+            await bot.send_message(chat_id=chat_id, text=f"✅ "+ text_phrase_2)
             await conn.execute(
                 "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                 db_user_id
             )
         else:
-            await bot.send_message(chat_id=chat_id, text=f"❌ Invalid name receive")
+            row = await conn.fetchrow(
+                "SELECT phrase_3 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
+                db_user_id
+            )
+            
+            text_phrase_3 = row["phrase_3"] if row else None
+            await bot.send_message(chat_id=chat_id, text=f"❌ "+text_phrase_3)
 
         mark = 1
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
