@@ -93,13 +93,17 @@ async def telegram_webhook(request: Request):
 
         db_user_id = existing_user["id"] if existing_user else (await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id))["id"]
 
-        #////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО МОВУ СПІЛКУВАННЯ ////////////////////////////////////
+
         command_value = await conn.fetchval(
             "SELECT command FROM user_commands WHERE user_id = $1",
             db_user_id
         )
         print(f"Current command: {command_value}")
+
+
+        #////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО МОВУ СПІЛКУВАННЯ ////////////////////////////////////
         if command_value == 'language':
+
             messages = [
                 {"role": "system", "content": "You are a language conversion service."},
                 {
@@ -120,8 +124,6 @@ async def telegram_webhook(request: Request):
                     language_code, db_user_id
                 )
                 await bot.send_message(chat_id=chat_id, text=f"✅ Language saved: {language_code}\nSwitching to your language of communication.")
-
-
 
 
                 # Отримуємо мову користувача з бази
@@ -178,23 +180,7 @@ async def telegram_webhook(request: Request):
                     VALUES ($1, $2, $3, $4, $5, $6)
                 """, db_user_id, *translated_phrases[:5])
 
-
-                
-
-
-
-
-
-
-
-
-
-
-
-
-                
-
-                
+          
                 await conn.execute(
                     "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                     db_user_id
@@ -204,6 +190,23 @@ async def telegram_webhook(request: Request):
 
             mark = 1
 
+        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        #//////////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО ІМЯ ///////////////////////////////////////////
+        if command_value == 'name':
+            await conn.execute(
+                "UPDATE users SET name = $1 WHERE id = $2",
+                user_text, db_user_id
+            )
+            await bot.send_message(chat_id=chat_id, text=f"✅ Name saved: {name}")
+            await conn.execute(
+                "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
+                db_user_id
+            )
+        else:
+            await bot.send_message(chat_id=chat_id, text=f"❌ Invalid name receive")
+
+        mark = 1
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
@@ -222,6 +225,30 @@ async def telegram_webhook(request: Request):
                 parse_mode="Markdown"
             )
             return {"status": "waiting_language"}
+
+        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        #/////////////////////////////////////// ТЕСТ комірки ДЕ ВКАЗАНО ІМЯ ////////////////////////////////////////////////
+        if not existing_user["name"]:
+            await conn.execute("""
+                INSERT INTO user_commands (user_id, command)
+                VALUES ($1, $2)
+            """, db_user_id, "name")
+
+
+            row = await conn.fetchrow(
+                "SELECT phrase_1 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
+                db_user_id
+            )
+            
+            text_phrase_1 = row["phrase_1"] if row else None
+
+            await bot.send_message(
+                chat_id=chat_id,
+                text="🔥 "+ text_phrase_1,
+                parse_mode="Markdown"
+            )
+            return {"status": "waiting_name"}
 
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
