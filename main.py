@@ -170,9 +170,9 @@ async def telegram_webhook(request: Request):
 
 
                 # Вивід у Telegram
-                for phrase in translated_phrases:
-                    if phrase:  # пропускаємо None
-                        await bot.send_message(chat_id=chat_id, text=phrase)
+                #for phrase in translated_phrases:
+                #    if phrase:  # пропускаємо None
+                #        await bot.send_message(chat_id=chat_id, text=phrase)
                 
                 # Внесення у таблицю translated_phrases (решта фраз — NULL)
                 await conn.execute("""
