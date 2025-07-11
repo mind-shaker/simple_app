@@ -121,6 +121,77 @@ async def telegram_webhook(request: Request):
                 )
                 await bot.send_message(chat_id=chat_id, text=f"✅ Language saved: {language_code}\nSwitching to your language of communication.")
 
+
+
+
+                # Отримуємо мову користувача з бази
+                row = await conn.fetchrow("SELECT language FROM users WHERE user_id = $1", db_user_id)
+                language = row["language"] if row else "Ukrainian"
+                
+                # Набір англійських фраз
+                phrases = (
+                    "Please enter your name.",
+                    "Which country are you from?",
+                    "Would you like me to automatically generate the characteristics of your conversation partner?",
+                    "Please describe your conversation partner.",
+                    "Let's chat!"
+                )
+                
+                # Формуємо промпт для GPT
+                prompt = (
+                    f"Translate the following English phrases into {language}:\n\n" +
+                    "\n".join(f"- {phrase}" for phrase in phrases)
+                )
+                
+                # Готуємо повідомлення для OpenAI
+                messages = [
+                    {"role": "system", "content": "You are a helpful assistant that translates phrases accurately."},
+                    {"role": "user", "content": prompt}
+                ]
+                
+                # Відправляємо запит
+                response_text = await query_openai_chat(messages)
+                
+                # Розбираємо результат у кортеж
+                translated_phrases = tuple(
+                    line[2:].strip()
+                    for line in response_text.strip().split("\n")
+                    if line.startswith("- ")
+                )
+
+                # Заповнюємо до 5 елементів, якщо менше
+                translated_phrases = list(translated_phrases)
+                while len(translated_phrases) < 5:
+                    translated_phrases.append(None)
+
+
+                # Вивід у Telegram
+                for phrase in translated_phrases:
+                    if phrase:  # пропускаємо None
+                        await bot.send_message(chat_id=chat_id, text=phrase)
+                
+                # Внесення у таблицю translated_phrases (решта фраз — NULL)
+                await conn.execute("""
+                    INSERT INTO translated_phrases (user_id, phrase_1, phrase_2, phrase_3, phrase_4, phrase_5)
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                """, db_user_id, *translated_phrases[:5])
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+
                 
                 await conn.execute(
                     "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
