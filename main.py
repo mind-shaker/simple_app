@@ -209,7 +209,8 @@ async def telegram_webhook(request: Request):
             )
             
             text_phrase_2 = row["phrase_2"] if row else None
-            await bot.send_message(chat_id=chat_id, text=f"✅ "+ text_phrase_2)
+            text_phrase_2="✅ "+ text_phrase_2
+            await bot.send_message(chat_id=chat_id, text=text_phrase_2)
             await conn.execute(
                 "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                 db_user_id
@@ -221,7 +222,8 @@ async def telegram_webhook(request: Request):
             )
             
             text_phrase_3 = row["phrase_3"] if row else None
-            await bot.send_message(chat_id=chat_id, text=f"❌ "+text_phrase_3)
+            text_phrase_3="❌ "+text_phrase_3
+            await bot.send_message(chat_id=chat_id, text=text_phrase_3)
 
         mark = 1
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -259,10 +261,10 @@ async def telegram_webhook(request: Request):
             )
             
             text_phrase_1 = row["phrase_1"] if row else None
-
+            text_phrase_1="🔥 "+ text_phrase_1
             await bot.send_message(
                 chat_id=chat_id,
-                text="🔥 "+ text_phrase_1,
+                text=text_phrase_1,
                 parse_mode="Markdown"
             )
             return {"status": "waiting_name"}
