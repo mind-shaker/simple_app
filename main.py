@@ -154,7 +154,7 @@ async def telegram_webhook(request: Request):
             text_phrase_2="✅ "+ text_phrase_2
             await bot.send_message(chat_id=chat_id, text=text_phrase_2)
 
-            send_phrase(conn, bot, chat_id, db_user_id, phrase_2, "✅ " )
+            send_phrase(conn, bot, chat_id, db_user_id, "phrase_2", "✅ " )
             
             await conn.execute(
                 "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
