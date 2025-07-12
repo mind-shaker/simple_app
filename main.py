@@ -254,10 +254,15 @@ async def telegram_webhook(request: Request):
 
         #////////////////////////////// ТЕСТ комірки ПРО МОВУ СПІЛКУВАННЯ ////////////////////////////////////
         if not existing_user["language"]:
+
+                         
             await conn.execute("""
                 INSERT INTO user_commands (user_id, command)
                 VALUES ($1, $2)
+                ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
             """, db_user_id, "language")
+
+                         
             await bot.send_message(
                 chat_id=chat_id,
                 text="🔥 Enter your language",
