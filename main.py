@@ -383,6 +383,170 @@ async def telegram_webhook(request: Request):
         
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+                #/////////////////////// ОБРОБКА РЕСПОНСУ на питання НАЛАШТУВАНЬ СПІВРОЗМОВНИКА //////////////////////////////////////
+        if command_value == 'new_handle_dialogue':
+            print(f"in body handle dialogue: {user_text}")
+
+            #автоматчичне створення очикуваного співрозмовника
+            existing_profile = await conn.fetchrow("SELECT * FROM simulated_personas WHERE user_id = $1", db_user_id)
+            if not existing_profile:
+    
+                init_msg = await bot.send_message(chat_id=chat_id, text="✅ ініціалізація характеристик Вашого співрозмовника..")
+                profile_reference = {
+                      "name": "Mariam",
+                      "age": 24,
+                      "country": "Egypt",
+                      "difficulty_level": "1–5",
+                      "religious_context": "muslim",
+                      "personality": "Skeptical but emotionally open",
+                      "barriers": ["God and suffering", "trust in religion"],
+                      "openness": "Medium",
+                      "goal": "To see if God is real and personal",
+                      "big_five_traits": {
+                            "openness": "high",
+                            "conscientiousness": "medium",
+                            "extraversion": "low",
+                            "agreeableness": "medium",
+                            "neuroticism": "high"
+                      },
+                      "temperament": "Melancholic",
+                      "worldview_and_values": ["Humanism", "Skepticism"],
+                      "beliefs": ["Religion is man-made", "God may exist but is distant"],
+                      "motivation_and_goals": ["Find meaning after loss", "Reconnect with hope"],
+                      "background": "Grew up in nominal faith, lost friend in accident",
+                      "erikson_stage": "Young adulthood — Intimacy vs. Isolation",
+                      "emotional_intelligence": "Moderate",
+                      "thinking_style": "Analytical with emotional interference",
+                      "biological_factors": ["Sleep-deprived", "Hormonal imbalance"],
+                      "social_context": ["Urban Egyptian culture", "Peers secular"],
+                      "enneagram": "Type 4 — Individualist",
+                      "disc_profile": "C — Conscientious",
+                      "stress_tolerance": "Low",
+                      "self_image": "Feels broken, searching for healing",
+                      "cognitive_biases": ["Confirmation bias", "Negativity bias"],
+                      "attachment_style": "Anxious-preoccupied",
+                      "religion": "Nominal Christian",
+                      "trauma_history": "Friend's death in accident — unresolved",
+                      "stress_level": "High",
+                      "habits": ["Night owl", "Avoids social events"],
+                      "why_contacted_us": "Saw Christian video that made her cry",
+                      "digital_behavior": ["Active on Instagram", "Searches for spiritual content"],
+                      "peer_pressure": ["Friends mock faith"],
+                      "attachment_history": "Emotionally distant parents (based on Bowlby theory)",
+                      "culture": "Middle Eastern / Egyptian",
+                      "neuroprofile": "Sensitive limbic response",
+                      "meta_programs": ["Away-from motivation", "External validation"],
+                      "philosophical_views": ["Existentialism", "Skepticism"]
+                }
+                system_prompt = f"""
+                Ти — помічник, який створює психологічні профілі вигаданих людей.  
+                Ось приклад профілю, на основі якого потрібно згенерувати схожий профіль, але з іншими значеннями:  
+                {json.dumps(profile_reference, ensure_ascii=False, indent=2)}
+                
+                Згенеруй новий профіль, використовуючи подібну структуру та формат, але з новими значеннями, які логічно відповідають полям, враховуючи ось ці побажання:{user_text}.   
+                Поле difficulty_level має бути одним із перерахованих пронумерованих рядків: 
+                  1 — Відкритий, з легким духовним запитом  
+                  2 — Сумніваючийся, шукає, але з бар'єрами  
+                  3 — Емоційно травмований, закритий, критичний  
+                  4 — Ворожий або апатичний, з негативним особистим досвідом  
+                  5 — Провокативний, агресивний, теологічно підкований
+                
+                
+                Відповідь дай у форматі JSON, без жодних пояснень.
+                Без коду markdown, тільки JSON.
+                """
+                messages = [
+                    {"role": "system", "content": system_prompt}
+                ]
+                response = await query_openai_chat(messages=messages)
+                
+                # Парсимо json відповідь від чату
+                try:
+                    persona = json.loads(response)
+                except Exception as e:
+                    await bot.send_message(chat_id=chat_id, text=f"❌ Помилка парсингу профілю: {e}")
+                    return {"status": "error_parsing_profile"}
+
+                # Вставляємо в базу
+                await conn.execute(
+                    """
+                    INSERT INTO simulated_personas (
+                        user_id, name, age, country, difficulty_level, religious_context, personality,
+                        barriers, openness, goal, big_five_traits, temperament, worldview_and_values,
+                        beliefs, motivation_and_goals, background, erikson_stage, emotional_intelligence,
+                        thinking_style, biological_factors, social_context, enneagram, disc_profile,
+                        stress_tolerance, self_image, cognitive_biases, attachment_style, religion,
+                        trauma_history, stress_level, habits, why_contacted_us, digital_behavior,
+                        peer_pressure, attachment_history, culture, neuroprofile, meta_programs, philosophical_views
+                    ) VALUES (
+                        $1, $2, $3, $4, $5, $6, $7,
+                        $8, $9, $10, $11, $12, $13,
+                        $14, $15, $16, $17, $18,
+                        $19, $20, $21, $22, $23,
+                        $24, $25, $26, $27, $28,
+                        $29, $30, $31, $32, $33,
+                        $34, $35, $36, $37, $38, $39
+                    )
+                    """,
+                    db_user_id,
+                    persona.get("name"),
+                    persona.get("age"),
+                    persona.get("country"),
+                    persona.get("difficulty_level"),
+                    persona.get("religious_context"),
+                    persona.get("personality"),
+                    persona.get("barriers"),
+                    persona.get("openness"),
+                    persona.get("goal"),
+                    json.dumps(persona.get("big_five_traits")),
+                    persona.get("temperament"),
+                    persona.get("worldview_and_values"),
+                    persona.get("beliefs"),
+                    persona.get("motivation_and_goals"),
+                    persona.get("background"),
+                    persona.get("erikson_stage"),
+                    persona.get("emotional_intelligence"),
+                    persona.get("thinking_style"),
+                    persona.get("biological_factors"),
+                    persona.get("social_context"),
+                    persona.get("enneagram"),
+                    persona.get("disc_profile"),
+                    persona.get("stress_tolerance"),
+                    persona.get("self_image"),
+                    persona.get("cognitive_biases"),
+                    persona.get("attachment_style"),
+                    persona.get("religion"),
+                    persona.get("trauma_history"),
+                    persona.get("stress_level"),
+                    persona.get("habits"),
+                    persona.get("why_contacted_us"),
+                    persona.get("digital_behavior"),
+                    persona.get("peer_pressure"),
+                    persona.get("attachment_history"),
+                    persona.get("culture"),
+                    persona.get("neuroprofile"),
+                    persona.get("meta_programs"),
+                    persona.get("philosophical_views"),
+                )
+                await init_msg.delete()
+                await bot.send_message(chat_id=chat_id, text="✅ Профіль Вашого співрозмовника згенеровано і збережено.")    
+                await conn.execute(
+                    "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
+                    db_user_id
+                )
+            else:
+                await bot.send_message(chat_id=chat_id, text="✅ Профіль характеристик Вашого співрозмовника вже існує. Продовжимо діалог.")
+                await conn.execute(
+                    "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
+                    db_user_id
+                )
+            mark = 1
+
+
+
+        
+        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
         print(f"existing_user: {existing_user}")
 
