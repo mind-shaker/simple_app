@@ -29,6 +29,7 @@ async def get_connection():
 
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Виведення в ТЕЛЕГРАМ перекладених фраз" 0
 async def send_phrase(conn, bot, chat_id, db_user_id, phrase_column: str, prefix: str = ""):
+    print(f"Im here: ")
     query = f"SELECT {phrase_column} FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1"
     try:
         row = await conn.fetchrow(query, db_user_id)
