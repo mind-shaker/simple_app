@@ -144,17 +144,27 @@ async def telegram_webhook(request: Request):
                     "Let's chat!"
                 )
                 
-                # Формуємо промпт для GPT
+
+
+
+
+                                
+                # Формуємо промпт
                 prompt = (
-                    f"Translate the following English phrases into {language}:\n\n" +
-                    "\n".join(f"- {phrase}" for phrase in phrases)
+                    f"Translate the following English phrases into {language}. "
+                    "Return only the translations, one per line, in the same order. "
+                    "Do not include the original English text, any explanations, or formatting.\n\n" +
+                    "\n".join(phrases)
                 )
                 
-                # Готуємо повідомлення для OpenAI
+                # Повідомлення для OpenAI
                 messages = [
-                    {"role": "system", "content": "You are a helpful assistant that translates phrases accurately."},
+                    {"role": "system", "content": "You are a translation engine. Respond with only the translated phrases, no explanations, no original text, and no formatting."},
                     {"role": "user", "content": prompt}
                 ]
+
+
+
                 
                 # Відправляємо запит
                 response_text = await query_openai_chat(messages)
