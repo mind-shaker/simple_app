@@ -603,7 +603,7 @@ async def telegram_webhook(request: Request):
                 parse_mode="Markdown"
             )
             await conn.execute(
-                "UPDATE users SET country = $1 WHERE id = $2",
+                "UPDATE users SET initial = $1 WHERE id = $2",
                 'pss', db_user_id
             )
             return {"status": "waiting_seeker_status"}
