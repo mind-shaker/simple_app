@@ -173,10 +173,11 @@ async def telegram_webhook(request: Request):
                 
                 # Розбираємо результат у кортеж
                 translated_phrases = tuple(
-                    line[2:].strip()
+                    line.strip()
                     for line in response_text.strip().split("\n")
-                    if line.startswith("- ")
+                    if line.strip()  # відкидаємо пусті рядки
                 )
+
 
                 # Заповнюємо до 15 елементів None, якщо менше
                 translated_phrases = list(translated_phrases)
