@@ -28,21 +28,9 @@ async def get_connection():
     return await asyncpg.connect(DATABASE_URL)
 
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Виведення в ТЕЛЕГРАМ перекладених фраз" 0
-#async def send_phrase(conn, bot, chat_id, db_user_id, phrase_column: str, prefix: str = ""):
-async def send_phrase(rut):
+async def send_phrase(chat_id):
     print(f"Im here: {rut} ")
-'''
-    query = f"SELECT {phrase_column} FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1"
-    try:
-        row = await conn.fetchrow(query, db_user_id)
-        print(f"row {phrase_column}: {row}")
-        text = row[phrase_column] if row and row[phrase_column] else None
-        print(f"text: {text}")
-        if text:
-            await bot.send_message(chat_id=chat_id, text=prefix + text)
-    except Exception as e:
-        print(f"❌ Error fetching {phrase_column}: {e}")
-'''
+    await bot.send_message(chat_id=chat_id, text='ffffffff')
 
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Виклик OpenAI API"
 async def query_openai_chat(messages: list[dict]) -> str:
@@ -153,14 +141,13 @@ async def telegram_webhook(request: Request):
                 "SELECT phrase_2 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
                 db_user_id
             )
-            print(f"row name_1: {row}")
+            print(f"row name_1----------------: {row}")
             text_phrase_2 = row["phrase_2"] if row else None
             text_phrase_2="✅ "+ text_phrase_2
             await bot.send_message(chat_id=chat_id, text=text_phrase_2)
 
-            #send_phrase(conn, bot, chat_id, db_user_id, "phrase_2", "✅ " )
-            tu="eeeeeeeee"
-            send_phrase(tu)
+            send_phrase(chat_id)
+
             
             await conn.execute(
                 "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
