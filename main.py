@@ -264,12 +264,12 @@ async def telegram_webhook(request: Request):
                     Ти — помічник, який створює психологічні профілі вигаданих людей.  
                     Згенеруй новий профіль, використовуючи структуру та формат як в наданому далі прикладі профілю, але з новими значеннями, які логічно відповідають полям.       
                     Ось приклад профілю: {json.dumps(profile_reference, ensure_ascii=False, indent=2)}.
-                    Поле difficulty_level в профілі має бути одним із пронумерованих варіантів: 
-                      1 — Відкритий, з легким духовним запитом  
-                      2 — Сумніваючийся, шукає, але з бар'єрами  
-                      3 — Емоційно травмований, закритий, критичний  
-                      4 — Ворожий або апатичний, з негативним особистим досвідом  
-                      5 — Провокативний, агресивний, теологічно підкований 
+                    В в значенні ключа difficulty_level в новому згенерованому профілі заміни цифру на характеристику яка відповідає тій цифрі із пронумерованих далі варіантів: 
+                        1 — Open, with a mild spiritual inquiry
+                        2 — Doubtful, searching, but with barriers
+                        3 — Emotionally wounded, closed-off, critical
+                        4 — Hostile or apathetic, with negative personal experience
+                        5 — Provocative, aggressive, theologically well-versed
                     Відповідь дай у форматі JSON, без жодних пояснень.
                     Без коду markdown, тільки JSON.
                     """
