@@ -74,6 +74,7 @@ async def telegram_webhook(request: Request):
     conn = await get_connection() #++++++++++++++++++++++ ВИКЛИК ФУНКЦІЇ "Отримання з'єднання з PostgreSQL" 0 +++++++++++++++++++
     try:
         #///////////////////////////////////////// ТЕСТ НА ПЕРШИЙ ВХІД В БОТА //////////////////////////////////////////////
+        print("ТЕСТ НА ПЕРШИЙ ВХІД В БОТА")
         # перевірка чи існує в таблиці користувачів поточний користувач user_id в полі таблиці telegram_id. existing_user - це массив значень по користувачу
         existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
 
@@ -139,7 +140,6 @@ async def telegram_webhook(request: Request):
 
         #//////////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО ІМЯ ///////////////////////////////////////////
         if command_value == 'name':
-            print(f"in body name")
             print(f"in body name: {user_text}")
             await conn.execute(
                 "UPDATE users SET name = $1 WHERE id = $2",
@@ -169,6 +169,7 @@ async def telegram_webhook(request: Request):
 
         #////////////////////////////// ТЕСТ комірки ПРО МОВУ СПІЛКУВАННЯ ////////////////////////////////////
         if not existing_user["language"]:
+            print(f"Тест пустої комірки мови")
      
             await conn.execute("""
                 INSERT INTO user_commands (user_id, command)
@@ -193,6 +194,7 @@ async def telegram_webhook(request: Request):
         if row:
             print("✅ Користувач існує і поле phrase_1 заповнене")
         else:
+            print(f"Тест пустої комірки перекладу")
             print("❌ Або користувача немає, або поле language порожнє")
             await bot.send_message(chat_id=chat_id, text=f"✅ Switching to your language of communication.")
                 
@@ -292,6 +294,7 @@ async def telegram_webhook(request: Request):
 
         #/////////////////////////////////////// ТЕСТ комірки ДЕ ВКАЗАНО ІМЯ ////////////////////////////////////////////////
         if not existing_user["name"]:
+            print(f"Тест пустої комірки імя")
 
 
             await conn.execute("""
