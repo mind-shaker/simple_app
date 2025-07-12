@@ -389,7 +389,7 @@ async def telegram_webhook(request: Request):
         
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                #/////////////////////// ОБРОБКА РЕСПОНСУ на питання НАЛАШТУВАНЬ СПІВРОЗМОВНИКА //////////////////////////////////////
+        #/////////////////////// ОБРОБКА РЕСПОНСУ на питання НАЛАШТУВАНЬ СПІВРОЗМОВНИКА //////////////////////////////////////
         if command_value == 'new_handle_dialogue':
             print(f"in body handle dialogue: {user_text}")
 
@@ -464,6 +464,36 @@ async def telegram_webhook(request: Request):
                 messages = [
                     {"role": "system", "content": system_prompt}
                 ]
+
+                messages = [
+                    {
+                        "role": "system",
+                        "content": "Ти — помічник, який створює психологічні профілі вигаданих людей."
+                    },
+                    {
+                        "role": "user",
+                        "content": f"""Згенеруй новий профіль, використовуючи структуру та формат як в наданому нижче прикладі профілю, але з новими значеннями, які логічно відповідають полям.
+                
+                Ось приклад профілю:
+                {json.dumps(profile_reference, ensure_ascii=False, indent=2)}
+                
+                У значенні ключа `difficulty_level` в новому згенерованому профілі заміни цифру на характеристику, яка відповідає тій цифрі разом з цифрою з цього списку:
+                  1 — Open, with a mild spiritual inquiry
+                  2 — Doubtful, searching, but with barriers
+                  3 — Emotionally wounded, closed-off, critical
+                  4 — Hostile or apathetic, with negative personal experience
+                  5 — Provocative, aggressive, theologically well-versed
+
+                При генерації полів профілю врахуй будь ласка ось ці побажання: {user_text}.
+
+                
+                Відповідь дай у форматі **JSON**, без жодних пояснень.
+                Без коду markdown, тільки чистий JSON."""
+                    }
+                ]
+
+
+                
                 response = await query_openai_chat(messages=messages)
                 
                 # Парсимо json відповідь від чату
