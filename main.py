@@ -114,7 +114,9 @@ async def telegram_webhook(request: Request):
             ]
         
             # Get response from OpenAI in English
-            language_code = await query_openai_chat(messages)
+            language_code = await query_openai_chat(messages
+
+            print(f"language_code: {language_code}")                                        
             language_code = language_code.strip().lower()
         
             # Validate the code
@@ -129,7 +131,7 @@ async def telegram_webhook(request: Request):
 
                 # Отримуємо мову користувача з бази
                 row = await conn.fetchrow("SELECT language FROM users WHERE id = $1", db_user_id)
-                language = row["language"] if row else "Ukrainian"
+                language = row["language"] if row else "eng"
                 
                 # Набір англійських фраз
                 phrases = (
@@ -177,6 +179,8 @@ async def telegram_webhook(request: Request):
                     for line in response_text.strip().split("\n")
                     if line.strip()  # відкидаємо пусті рядки
                 )
+
+                print(f"translated_phrases : {translated_phrases}")
 
 
                 # Заповнюємо до 15 елементів None, якщо менше
