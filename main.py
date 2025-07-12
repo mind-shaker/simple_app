@@ -366,8 +366,16 @@ async def telegram_webhook(request: Request):
                     )
                     await init_msg.delete()
                     await bot.send_message(chat_id=chat_id, text="✅ Профіль Вашого співрозмовника згенеровано і збережено.")    
+                    await conn.execute(
+                        "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
+                        db_user_id
+                    )
                 else:
                     await bot.send_message(chat_id=chat_id, text="✅ Профіль характеристик Вашого співрозмовника вже існує. Продовжимо діалог.")
+                    await conn.execute(
+                        "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
+                        db_user_id
+                    )
                 mark = 1
 
 
