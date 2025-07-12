@@ -595,7 +595,7 @@ async def telegram_webhook(request: Request):
                 parse_mode="Markdown"
             )
             await conn.execute(
-                "UPDATE users SET initial = $1 WHERE telegram_id = $2",
+                "UPDATE users SET initial = $1 WHERE id = $2",
                 "passed", db_user_id
             )
             return {"status": "waiting_seeker_status"}
