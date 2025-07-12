@@ -209,21 +209,6 @@ async def telegram_webhook(request: Request):
             print(f"in body dialogue: {user_text}")
 
             if user_text.lower() in ("yes", "y"):
-
-                row = await conn.fetchrow(
-                    "SELECT phrase_7 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
-                    db_user_id
-                )
-                print(f"row seeker: {row}")
-                text_phrase_7 = row["phrase_7"] if row else None
-                text_phrase_7="✅ "+ text_phrase_7
-                await bot.send_message(chat_id=chat_id, text=text_phrase_7)
-                await conn.execute(
-                    "UPDATE user_commands SET command = 'new_handle_dialogue' WHERE user_id = $1",
-                    db_user_id
-                )
-                return {"status": "waiting_language"}
-            else:
                 #автоматчичне створення випадкового співрозмовника
                 existing_profile = await conn.fetchrow("SELECT * FROM simulated_personas WHERE user_id = $1", db_user_id)
                 if not existing_profile:
@@ -376,7 +361,23 @@ async def telegram_webhook(request: Request):
                         "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                         db_user_id
                     )
+                    
                 mark = 1
+            else:
+                row = await conn.fetchrow(
+                    "SELECT phrase_7 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
+                    db_user_id
+                )
+                print(f"row seeker: {row}")
+                text_phrase_7 = row["phrase_7"] if row else None
+                text_phrase_7="✅ "+ text_phrase_7
+                await bot.send_message(chat_id=chat_id, text=text_phrase_7)
+                await conn.execute(
+                    "UPDATE user_commands SET command = 'new_handle_dialogue' WHERE user_id = $1",
+                    db_user_id
+                )
+                return {"status": "waiting_language"}
+
 
 
 
@@ -772,6 +773,24 @@ async def telegram_webhook(request: Request):
             )
             return {"status": "waiting_seeker_status"}
 
+        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
+        #/////////////////////////////////////// ПИТАННЯ про РУЧНЕ ВИЗНАЧЕННЯ СПІВРОЗМОВНИКА ////////////////////////////////
+        if mark == 1:
+            row = await conn.fetchrow(
+                "SELECT phrase_9 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
+                db_user_id
+            )
+            print(f"new_dialogue: {row}")
+            
+            text_phrase_9 = row["phrase_9"] if row else None
+            text_phrase_9="🔥 "+ text_phrase_9
+            await bot.send_message(
+                chat_id=chat_id,
+                text=text_phrase_9,
+                parse_mode="Markdown"
+            )
+            return {"status": "data_updated"}
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
