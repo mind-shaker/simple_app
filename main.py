@@ -151,24 +151,54 @@ async def telegram_webhook(request: Request):
         #//////////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО КРАЇНУ ///////////////////////////////////////////
         if command_value == 'country':
             print(f"in body country: {user_text}")
-            await conn.execute(
-                "UPDATE users SET country = $1 WHERE id = $2",
-                user_text, db_user_id
-            )
+            
+            messages = [
+                {"role": "system", "content": "You are a country code conversion service."},
+                {
+                    "role": "user",
+                    "content": f'Provide the ISO 3166-1 alpha-3 code for this country: "{user_text}". Return only the code, in uppercase, without additional text.'
+                }
+            ]
+            
+            # Отримуємо код країни
+            country_code = await query_openai_chat(messages)
+            
+            print(f"country_code: {country_code}")
+            country_code = country_code.strip().upper()
+            
+            # Перевіряємо, що це дійсний код
+            if len(country_code) == 3 and country_code.isalpha():
+                await conn.execute(
+                    "UPDATE users SET country = $1 WHERE id = $2",
+                    user_text, db_user_id
+                )
+    
+                row = await conn.fetchrow(
+                    "SELECT phrase_4 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
+                    db_user_id
+                )
+                print(f"row country_1: {row}")
+                text_phrase_4 = row["phrase_4"] if row else None
+                text_phrase_4="✅ "+ text_phrase_4
+                await bot.send_message(chat_id=chat_id, text=text_phrase_4)
+                await conn.execute(
+                    "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
+                    db_user_id
+                )
+            else:
+                row = await conn.fetchrow(
+                    "SELECT phrase_5 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
+                    db_user_id
+                )
+                text_phrase_5 = row["phrase_5"] if row else None
+                text_phrase_5="✅ "+ text_phrase_5
+                await bot.send_message(chat_id=chat_id, text=text_phrase_5)
 
-            row = await conn.fetchrow(
-                "SELECT phrase_4 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
-                db_user_id
-            )
-            print(f"row country_1: {row}")
-            text_phrase_4 = row["phrase_4"] if row else None
-            text_phrase_4="✅ "+ text_phrase_4
-            await bot.send_message(chat_id=chat_id, text=text_phrase_4)
-            await conn.execute(
-                "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
-                db_user_id
-            )
             mark = 1
+
+            
+
+
         
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
