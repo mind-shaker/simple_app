@@ -27,6 +27,19 @@ async def get_connection():
     print(f"ВХІД в базу даних")
     return await asyncpg.connect(DATABASE_URL)
 
+#=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Виведення в ТЕЛЕГРАМ перекладених фраз" 0
+async def send_phrase(conn, bot, chat_id, db_user_id, phrase_column: str, prefix: str = ""):
+    query = f"SELECT {phrase_column} FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1"
+    try:
+        row = await conn.fetchrow(query, db_user_id)
+        print(f"row {phrase_column}: {row}")
+        text = row[phrase_column] if row and row[phrase_column] else None
+        if text:
+            await bot.send_message(chat_id=chat_id, text=prefix + text)
+    except Exception as e:
+        print(f"❌ Error fetching {phrase_column}: {e}")
+
+
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Виклик OpenAI API"
 async def query_openai_chat(messages: list[dict]) -> str:
     try:
@@ -140,6 +153,9 @@ async def telegram_webhook(request: Request):
             text_phrase_2 = row["phrase_2"] if row else None
             text_phrase_2="✅ "+ text_phrase_2
             await bot.send_message(chat_id=chat_id, text=text_phrase_2)
+
+            send_phrase(conn, bot, chat_id, db_user_id, phrase_2, "✅ " )
+            
             await conn.execute(
                 "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                 db_user_id
@@ -444,26 +460,6 @@ async def telegram_webhook(request: Request):
                       "meta_programs": ["Away-from motivation", "External validation"],
                       "philosophical_views": ["Existentialism", "Skepticism"]
                 }
-                system_prompt = f"""
-                Ти — помічник, який створює психологічні профілі вигаданих людей.  
-                Ось приклад профілю, на основі якого потрібно згенерувати схожий профіль, але з іншими значеннями:  
-                {json.dumps(profile_reference, ensure_ascii=False, indent=2)}
-                
-                Згенеруй новий профіль, використовуючи подібну структуру та формат, але з новими значеннями, які логічно відповідають полям, враховуючи ось ці побажання:{user_text}.   
-                Поле difficulty_level має бути одним із перерахованих пронумерованих рядків: 
-                  1 — Відкритий, з легким духовним запитом  
-                  2 — Сумніваючийся, шукає, але з бар'єрами  
-                  3 — Емоційно травмований, закритий, критичний  
-                  4 — Ворожий або апатичний, з негативним особистим досвідом  
-                  5 — Провокативний, агресивний, теологічно підкований
-                
-                
-                Відповідь дай у форматі JSON, без жодних пояснень.
-                Без коду markdown, тільки JSON.
-                """
-                messages = [
-                    {"role": "system", "content": system_prompt}
-                ]
 
                 messages = [
                     {
@@ -627,15 +623,21 @@ async def telegram_webhook(request: Request):
             
             # Набір англійських фраз
             phrases = (
-                "Please enter your name.",
-                "Name saved.",
-                "Invalid input",
-                "Which country are you from?",
-                "Country name saved.",
-                "Would you like me to automatically generate the characteristics of your conversation partner?",
-                "Please describe your conversation partner.",
-                "Conversation partner's profile generated.",
-                "Let's chat!"
+                "Please enter your name.", # - phrase_1 (
+                "Name saved.", # - phrase_2
+                "Invalid input", # - phrase_3
+                "Which country are you from?", # - phrase_4
+                "Country name saved.", # - phrase_5
+                "Would you like me to automatically generate the characteristics of your conversation partner?", # - phrase_6
+                "Please describe your conversation partner.", # - phrase_7
+                "Conversation partner's profile generated.", # - phrase_8
+                "Let's chat!", # - phrase_9
+                "Conversation partner's profile generated.", # - phrase_10
+                "Conversation partner's profile generated.", # - phrase_11
+                "Conversation partner's profile generated.", # - phrase_12
+                "Conversation partner's profile generated.", # - phrase_13
+                "Conversation partner's profile generated.", # - phrase_14
+                "Conversation partner's profile generated." # - phrase_15
             )
                             
             # Формуємо промпт
