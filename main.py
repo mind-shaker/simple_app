@@ -603,9 +603,9 @@ async def telegram_webhook(request: Request):
                 parse_mode="Markdown"
             )
             await conn.execute("""
-                INSERT INTO users (id, command)
+                INSERT INTO users (id, initial)
                 VALUES ($1, $2)
-                ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
+                ON CONFLICT (id) DO UPDATE SET command = EXCLUDED.command
             """, db_user_id, "passed")
             return {"status": "waiting_seeker_status"}
 
