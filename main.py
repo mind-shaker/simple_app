@@ -7,7 +7,8 @@ import redis.asyncio as redis
 from openai import AsyncOpenAI
 import json
 
-
+print("ТЕСТ НА ПЕРШИЙ ВХІД В БОТА")
+print(f"ТЕСТ НА ПЕРШИЙ ВХІД")
 #=================================================== Отримання конфігурації з середовища
 DATABASE_URL = os.getenv("DATABASE_URL")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -20,24 +21,6 @@ app = FastAPI()
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 redis_client = None
 
-#=================================================== Події запуску
-@app.on_event("startup")
-async def startup_event():
-    global redis_client
-    try:
-        redis_client = redis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
-        await redis_client.ping()
-        print("[REDIS] Підключення успішне!")
-    except Exception as e:
-        print(f"[REDIS] Помилка підключення: {e}")
-
-#=================================================== Події завершення
-@app.on_event("shutdown")
-async def shutdown_event():
-    global redis_client
-    if redis_client:
-        await redis_client.close()
-        print("[REDIS] Підключення закрите.")
 
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Отримання з'єднання з PostgreSQL" 0
 async def get_connection():
@@ -325,12 +308,6 @@ async def telegram_webhook(request: Request):
 
     finally:
         await conn.close()
-    #-------------------------- Робота з Redis:
-    if redis_client and user_id:
-        # Записуємо у Redis
-        await redis_client.set(f"user:{user_id}:name", full_name)
-        # Читаємо назад і виводимо у консоль
-        saved_name = await redis_client.get(f"user:{user_id}:name")
-        print(f"[REDIS] user:{user_id}:name → {saved_name}")
+
 
     return {"status": "ok"}
