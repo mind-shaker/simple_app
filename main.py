@@ -148,7 +148,7 @@ async def telegram_webhook(request: Request):
                 user_text, db_user_id
             )
 
-            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_2", "✅ ")
+            #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_2", "✅ ")
 
         
             await conn.execute(
@@ -185,7 +185,7 @@ async def telegram_webhook(request: Request):
                     country_code, db_user_id
                 )
     
-                await send_phrase(conn, bot, chat_id, db_user_id, "phrase_5", "✅ ")
+                #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_5", "✅ ")
                 await conn.execute(
                     "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                     db_user_id
