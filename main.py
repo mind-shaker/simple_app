@@ -602,10 +602,11 @@ async def telegram_webhook(request: Request):
                 text=text_phrase_6,
                 parse_mode="Markdown"
             )
-            await conn.execute(
-                "UPDATE users SET initial = $1 WHERE id = $2",
-                "passed", db_user_id
-            )
+            await conn.execute("""
+                INSERT INTO user_commands (user_id, command)
+                VALUES ($1, $2)
+                ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
+            """, db_user_id, "passed")
             return {"status": "waiting_seeker_status"}
 
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
