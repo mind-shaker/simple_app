@@ -170,7 +170,7 @@ async def telegram_webhook(request: Request):
             if len(country_code) == 3 and country_code.isalpha():
                 await conn.execute(
                     "UPDATE users SET country = $1 WHERE id = $2",
-                    user_text, db_user_id
+                    country_code, db_user_id
                 )
     
                 row = await conn.fetchrow(
