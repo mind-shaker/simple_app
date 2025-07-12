@@ -260,22 +260,30 @@ async def telegram_webhook(request: Request):
                           "meta_programs": ["Away-from motivation", "External validation"],
                           "philosophical_views": ["Existentialism", "Skepticism"]
                     }
-                    system_prompt = f"""
-                    Ти — помічник, який створює психологічні профілі вигаданих людей.  
-                    Згенеруй новий профіль, використовуючи структуру та формат як в наданому далі прикладі профілю, але з новими значеннями, які логічно відповідають полям.       
-                    Ось приклад профілю: {json.dumps(profile_reference, ensure_ascii=False, indent=2)}.
-                    В в значенні ключа difficulty_level в новому згенерованому профілі заміни цифру на характеристику яка відповідає тій цифрі із пронумерованих далі варіантів: 
-                        1 — Open, with a mild spiritual inquiry
-                        2 — Doubtful, searching, but with barriers
-                        3 — Emotionally wounded, closed-off, critical
-                        4 — Hostile or apathetic, with negative personal experience
-                        5 — Provocative, aggressive, theologically well-versed
-                    Відповідь дай у форматі JSON, без жодних пояснень.
-                    Без коду markdown, тільки JSON.
-                    """
                     messages = [
-                        {"role": "system", "content": system_prompt}
+                        {
+                            "role": "system",
+                            "content": "Ти — помічник, який створює психологічні профілі вигаданих людей."
+                        },
+                        {
+                            "role": "user",
+                            "content": f"""Згенеруй новий профіль, використовуючи структуру та формат як в наданому нижче прикладі профілю, але з новими значеннями, які логічно відповідають полям.
+                    
+                    Ось приклад профілю:
+                    {json.dumps(profile_reference, ensure_ascii=False, indent=2)}
+                    
+                    У значенні ключа `difficulty_level` в новому згенерованому профілі заміни цифру на характеристику, яка відповідає тій цифрі разом з цифрою з цього списку:
+                      1 — Open, with a mild spiritual inquiry
+                      2 — Doubtful, searching, but with barriers
+                      3 — Emotionally wounded, closed-off, critical
+                      4 — Hostile or apathetic, with negative personal experience
+                      5 — Provocative, aggressive, theologically well-versed
+                    
+                    Відповідь дай у форматі **JSON**, без жодних пояснень.
+                    Без коду markdown, тільки чистий JSON."""
+                        }
                     ]
+
                     response = await query_openai_chat(messages=messages)
                     
                     # Парсимо json відповідь від чату
