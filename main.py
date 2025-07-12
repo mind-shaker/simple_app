@@ -172,7 +172,7 @@ async def telegram_webhook(request: Request):
 
         #////////////////////////////// ТЕСТ комірки В ТАБЛИЦІ ПЕРЕКЛАДІВ (з миттєвим заповненням) //////////////////////////
         row = await conn.fetchrow(
-            "SELECT 1 FROM translated_phrases WHERE id = $1 AND phrase_1 IS NOT NULL",
+            "SELECT 1 FROM translated_phrases WHERE user_id = $1 AND phrase_1 IS NOT NULL",
             db_user_id
         )
         
