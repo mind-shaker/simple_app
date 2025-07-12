@@ -103,6 +103,7 @@ async def telegram_webhook(request: Request):
 
         #////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО МОВУ СПІЛКУВАННЯ ////////////////////////////////////
         if command_value == 'language':
+            print(f"in body language")
 
             messages = [
                 {"role": "system", "content": "You are a language conversion service."},
@@ -225,18 +226,8 @@ async def telegram_webhook(request: Request):
                 "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                 db_user_id
             )
-        else:
-            row = await conn.fetchrow(
-                "SELECT phrase_3 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
-                db_user_id
-            )
-            print(f"row name_3: {row}")
-            
-            text_phrase_3 = row["phrase_3"] if row else None
-            text_phrase_3="❌ "+text_phrase_3
-            await bot.send_message(chat_id=chat_id, text=text_phrase_3)
-
-        mark = 1
+            mark = 1
+        
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
