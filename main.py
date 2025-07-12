@@ -209,6 +209,8 @@ async def telegram_webhook(request: Request):
 
         #//////////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО ІМЯ ///////////////////////////////////////////
         if command_value == 'name':
+            print(f"in body name")
+            print(f"in body name: {user_text}")
             await conn.execute(
                 "UPDATE users SET name = $1 WHERE id = $2",
                 user_text, db_user_id
