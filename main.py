@@ -34,6 +34,7 @@ async def send_phrase(conn, bot, chat_id, db_user_id, phrase_column: str, prefix
         row = await conn.fetchrow(query, db_user_id)
         print(f"row {phrase_column}: {row}")
         text = row[phrase_column] if row and row[phrase_column] else None
+        print(f"text: {text}")
         if text:
             await bot.send_message(chat_id=chat_id, text=prefix + text)
     except Exception as e:
