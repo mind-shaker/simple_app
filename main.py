@@ -13,17 +13,18 @@ print(f"ТЕСТ НА ПЕРШИЙ ВХІД")
 DATABASE_URL = os.getenv("DATABASE_URL")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-REDIS_URL = os.getenv("REDIS_URL")  # наприклад, redis://:password@host:port
+#REDIS_URL = os.getenv("REDIS_URL")  # наприклад, redis://:password@host:port
 
 #=================================================== Ініціалізація компонентів
 bot = Bot(token=TELEGRAM_TOKEN)
 app = FastAPI()
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-redis_client = None
+#redis_client = None
 
 
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Отримання з'єднання з PostgreSQL" 0
 async def get_connection():
+    print(f"ВХІД в базу даних")
     return await asyncpg.connect(DATABASE_URL)
 
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Виклик OpenAI API"
@@ -40,6 +41,7 @@ async def query_openai_chat(messages: list[dict]) -> str:
 #=================================================== Обробка Telegram webhook
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
+    print(f"отримання запиту з телеграма")
     data = await request.json()
     message = data.get("message", {})
     chat_id = message.get("chat", {}).get("id")
