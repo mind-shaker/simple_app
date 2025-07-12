@@ -147,6 +147,31 @@ async def telegram_webhook(request: Request):
         
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+        #//////////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО КРАЇНУ ///////////////////////////////////////////
+        if command_value == 'country':
+            print(f"in body country: {user_text}")
+            await conn.execute(
+                "UPDATE users SET country = $1 WHERE id = $2",
+                user_text, db_user_id
+            )
+
+            row = await conn.fetchrow(
+                "SELECT phrase_4 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
+                db_user_id
+            )
+            print(f"row country_1: {row}")
+            text_phrase_4 = row["phrase_4"] if row else None
+            text_phrase_4="✅ "+ text_phrase_4
+            await bot.send_message(chat_id=chat_id, text=text_phrase_4)
+            await conn.execute(
+                "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
+                db_user_id
+            )
+            mark = 1
+        
+        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
         print(f"existing_user: {existing_user}")
 
@@ -304,6 +329,37 @@ async def telegram_webhook(request: Request):
                 parse_mode="Markdown"
             )
             return {"status": "waiting_name"}
+
+        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        #/////////////////////////////////////// ТЕСТ комірки ДЕ ВКАЗАНО КРАЇНУ ////////////////////////////////////////////////
+        if not existing_user["country"]:
+            print(f"Тест пустої комірки країни")
+
+
+            await conn.execute("""
+                INSERT INTO user_commands (user_id, command)
+                VALUES ($1, $2)
+                ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
+            """, db_user_id, "country")
+
+
+
+            row = await conn.fetchrow(
+                "SELECT phrase_4 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
+                db_user_id
+            )
+            print(f"row country: {row}")
+            
+            text_phrase_4 = row["phrase_4"] if row else None
+            text_phrase_4="🔥 "+ text_phrase_4
+            await bot.send_message(
+                chat_id=chat_id,
+                text=text_phrase_4,
+                parse_mode="Markdown"
+            )
+            return {"status": "waiting_country"}
 
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
