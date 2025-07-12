@@ -106,7 +106,7 @@ async def telegram_webhook(request: Request):
             language_code = language_code.strip().lower()
         
             # Validate the code
-            if len(language_code) == 3 and language_code.isalpha() and language_code =! 'sms' :
+            if len(language_code) == 3 and language_code.isalpha() and language_code != 'sms' :
                 # Save to DB
                 await conn.execute(
                     "UPDATE users SET language = $1 WHERE id = $2",
