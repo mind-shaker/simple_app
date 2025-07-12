@@ -114,7 +114,7 @@ async def telegram_webhook(request: Request):
             ]
         
             # Get response from OpenAI in English
-            language_code = await query_openai_chat(messages
+            language_code = await query_openai_chat(messages)
 
             print(f"language_code: {language_code}")                                        
             language_code = language_code.strip().lower()
