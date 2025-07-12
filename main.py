@@ -35,9 +35,13 @@ async def send_phrase(conn, bot, chat_id, db_user_id, phrase_column: str, prefix
         print(f"row {phrase_column}: {row}")
         text = row[phrase_column] if row and row[phrase_column] else None
         if text:
-            await bot.send_message(chat_id=chat_id, text=prefix + text)
+            feedback = await bot.send_message(chat_id=chat_id, text=prefix + text)
+            return feedback
     except Exception as e:
         print(f"❌ Error fetching {phrase_column}: {e}")
+
+
+
 
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Виклик OpenAI API"
 async def query_openai_chat(messages: list[dict]) -> str:
@@ -144,19 +148,9 @@ async def telegram_webhook(request: Request):
                 user_text, db_user_id
             )
 
-            row = await conn.fetchrow(
-                "SELECT phrase_2 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
-                db_user_id
-            )
-            print(f"row name_1----------------: {row}")
-            text_phrase_2 = row["phrase_2"] if row else None
-            text_phrase_2="✅ "+ text_phrase_2
-            await bot.send_message(chat_id=chat_id, text=text_phrase_2)
-
             await send_phrase(conn, bot, chat_id, db_user_id, "phrase_2", "✅ ")
 
-
-            
+        
             await conn.execute(
                 "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                 db_user_id
@@ -191,26 +185,13 @@ async def telegram_webhook(request: Request):
                     country_code, db_user_id
                 )
     
-                row = await conn.fetchrow(
-                    "SELECT phrase_5 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
-                    db_user_id
-                )
-                print(f"row country_1: {row}")
-                text_phrase_5 = row["phrase_5"] if row else None
-                text_phrase_5="✅ "+ text_phrase_5
-                await bot.send_message(chat_id=chat_id, text=text_phrase_5)
+                await send_phrase(conn, bot, chat_id, db_user_id, "phrase_5", "✅ ")
                 await conn.execute(
                     "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                     db_user_id
                 )
             else:
-                row = await conn.fetchrow(
-                    "SELECT phrase_6 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
-                    db_user_id
-                )
-                text_phrase_6 = row["phrase_6"] if row else None
-                text_phrase_6="✅ "+ text_phrase_6
-                await bot.send_message(chat_id=chat_id, text=text_phrase_6)
+                await send_phrase(conn, bot, chat_id, db_user_id, "phrase_3", "✅ ")
 
             mark = 1
 
@@ -230,7 +211,7 @@ async def telegram_webhook(request: Request):
                 existing_profile = await conn.fetchrow("SELECT * FROM simulated_personas WHERE user_id = $1", db_user_id)
                 if not existing_profile:
         
-                    init_msg = await bot.send_message(chat_id=chat_id, text="✅ ініціалізація характеристик Вашого співрозмовника..")
+                    init_msg = await send_phrase(conn, bot, chat_id, db_user_id, "phrase_10", "✅ ")
                     profile_reference = {
                           "name": "Mariam",
                           "age": 24,
@@ -307,7 +288,7 @@ async def telegram_webhook(request: Request):
                     try:
                         persona = json.loads(response)
                     except Exception as e:
-                        await bot.send_message(chat_id=chat_id, text=f"❌ Помилка парсингу профілю: {e}")
+                        await bot.send_message(chat_id=chat_id, text=f"❌ Parsing error: {e}")
                         return {"status": "error_parsing_profile"}
     
                     # Вставляємо в базу
@@ -372,13 +353,13 @@ async def telegram_webhook(request: Request):
                         persona.get("philosophical_views"),
                     )
                     await init_msg.delete()
-                    await bot.send_message(chat_id=chat_id, text="✅ Профіль Вашого співрозмовника згенеровано і збережено.")    
+                    await send_phrase(conn, bot, chat_id, db_user_id, "phrase_8", "✅ ")   
                     await conn.execute(
                         "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                         db_user_id
                     )
                 else:
-                    await bot.send_message(chat_id=chat_id, text="✅ Профіль характеристик Вашого співрозмовника вже існує. Продовжимо діалог.")
+                    await send_phrase(conn, bot, chat_id, db_user_id, "phrase_11", "✅ ")
                     await conn.execute(
                         "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                         db_user_id
@@ -386,14 +367,7 @@ async def telegram_webhook(request: Request):
                     
                 mark = 1
             else:
-                row = await conn.fetchrow(
-                    "SELECT phrase_7 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
-                    db_user_id
-                )
-                print(f"row seeker: {row}")
-                text_phrase_7 = row["phrase_7"] if row else None
-                text_phrase_7="✅ "+ text_phrase_7
-                await bot.send_message(chat_id=chat_id, text=text_phrase_7)
+                await send_phrase(conn, bot, chat_id, db_user_id, "phrase_7", "✅ ")
                 await conn.execute(
                     "UPDATE user_commands SET command = 'new_handle_dialogue' WHERE user_id = $1",
                     db_user_id
@@ -414,7 +388,8 @@ async def telegram_webhook(request: Request):
             existing_profile = await conn.fetchrow("SELECT * FROM simulated_personas WHERE user_id = $1", db_user_id)
             if not existing_profile:
     
-                init_msg = await bot.send_message(chat_id=chat_id, text="✅ ініціалізація характеристик Вашого співрозмовника..")
+                init_msg = await send_phrase(conn, bot, chat_id, db_user_id, "phrase_10", "✅ ")
+
                 profile_reference = {
                       "name": "Mariam",
                       "age": 24,
@@ -497,7 +472,7 @@ async def telegram_webhook(request: Request):
                 try:
                     persona = json.loads(response)
                 except Exception as e:
-                    await bot.send_message(chat_id=chat_id, text=f"❌ Помилка парсингу профілю: {e}")
+                    await bot.send_message(chat_id=chat_id, text=f"❌ Parsing error: {e}")
                     return {"status": "error_parsing_profile"}
 
                 # Вставляємо в базу
@@ -562,13 +537,13 @@ async def telegram_webhook(request: Request):
                     persona.get("philosophical_views"),
                 )
                 await init_msg.delete()
-                await bot.send_message(chat_id=chat_id, text="✅ Профіль Вашого співрозмовника згенеровано і збережено.")    
+                await send_phrase(conn, bot, chat_id, db_user_id, "phrase_8", "✅ ")  
                 await conn.execute(
                     "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                     db_user_id
                 )
             else:
-                await bot.send_message(chat_id=chat_id, text="✅ Профіль характеристик Вашого співрозмовника вже існує. Продовжимо діалог.")
+                await send_phrase(conn, bot, chat_id, db_user_id, "phrase_11", "✅ ")
                 await conn.execute(
                     "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                     db_user_id
@@ -633,13 +608,14 @@ async def telegram_webhook(request: Request):
                 "Please describe your conversation partner.", # - phrase_7
                 "Conversation partner's profile generated.", # - phrase_8
                 "Let's chat!", # - phrase_9
-                "Conversation partner's profile generated.", # - phrase_10
-                "Conversation partner's profile generated.", # - phrase_11
+                "Initializing the characteristics of your conversation partner...", # - phrase_10
+                "The profile of your conversation partner already exists. Let's continue the dialogue.", # - phrase_11
                 "Conversation partner's profile generated.", # - phrase_12
                 "Conversation partner's profile generated.", # - phrase_13
                 "Conversation partner's profile generated.", # - phrase_14
                 "Conversation partner's profile generated." # - phrase_15
             )
+            
                             
             # Формуємо промпт
             prompt = (
@@ -729,19 +705,7 @@ async def telegram_webhook(request: Request):
 
 
 
-            row = await conn.fetchrow(
-                "SELECT phrase_1 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
-                db_user_id
-            )
-            print(f"row name: {row}")
-            
-            text_phrase_1 = row["phrase_1"] if row else None
-            text_phrase_1="🔥 "+ text_phrase_1
-            await bot.send_message(
-                chat_id=chat_id,
-                text=text_phrase_1,
-                parse_mode="Markdown"
-            )
+            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_1", "🔥 ")
             return {"status": "waiting_name"}
 
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -760,19 +724,7 @@ async def telegram_webhook(request: Request):
 
 
 
-            row = await conn.fetchrow(
-                "SELECT phrase_4 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
-                db_user_id
-            )
-            print(f"row country: {row}")
-            
-            text_phrase_4 = row["phrase_4"] if row else None
-            text_phrase_4="🔥 "+ text_phrase_4
-            await bot.send_message(
-                chat_id=chat_id,
-                text=text_phrase_4,
-                parse_mode="Markdown"
-            )
+            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_4", "🔥 ")
             return {"status": "waiting_country"}
 
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -792,19 +744,7 @@ async def telegram_webhook(request: Request):
 
 
 
-            row = await conn.fetchrow(
-                "SELECT phrase_6 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
-                db_user_id
-            )
-            print(f"new_dialogue: {row}")
-            
-            text_phrase_6 = row["phrase_6"] if row else None
-            text_phrase_6="🔥 "+ text_phrase_6
-            await bot.send_message(
-                chat_id=chat_id,
-                text=text_phrase_6,
-                parse_mode="Markdown"
-            )
+            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_6", "🔥 ")
             await conn.execute(
                 "UPDATE users SET initial = $1 WHERE id = $2",
                 'pss', db_user_id
@@ -815,19 +755,7 @@ async def telegram_webhook(request: Request):
         
         #/////////////////////////////////////// ПИТАННЯ про РУЧНЕ ВИЗНАЧЕННЯ СПІВРОЗМОВНИКА ////////////////////////////////
         if mark == 1:
-            row = await conn.fetchrow(
-                "SELECT phrase_9 FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1",
-                db_user_id
-            )
-            print(f"new_dialogue: {row}")
-            
-            text_phrase_9 = row["phrase_9"] if row else None
-            text_phrase_9="🔥 "+ text_phrase_9
-            await bot.send_message(
-                chat_id=chat_id,
-                text=text_phrase_9,
-                parse_mode="Markdown"
-            )
+            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_9", "🔥 ")
             return {"status": "data_updated"}
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
