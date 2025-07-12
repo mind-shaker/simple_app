@@ -596,7 +596,7 @@ async def telegram_webhook(request: Request):
             print(f"new_dialogue: {row}")
             
             text_phrase_6 = row["phrase_6"] if row else None
-            text_phrase_6="🔥 "+ text_phrase_4
+            text_phrase_6="🔥 "+ text_phrase_6
             await bot.send_message(
                 chat_id=chat_id,
                 text=text_phrase_6,
