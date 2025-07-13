@@ -43,24 +43,36 @@ async def send_phrase(conn, bot, chat_id, db_user_id, phrase_column: str, prefix
 
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Збільшення лічильника повідомлень" 0
 async def increment_message_count(conn, db_user_id):
+    # Знаходимо ID останнього діалогу користувача
+    row_id = await conn.fetchrow("""
+        SELECT id FROM dialogues_stat
+        WHERE user_id = $1
+        ORDER BY started_at DESC
+        LIMIT 1
+    """, db_user_id)
+
+    if not row_id:
+        print("❌ No dialogue found for this user.")
+        return None
+
+    dialogue_id = row_id["id"]
+
+    # Оновлюємо лічильник повідомлень і повертаємо його
     row = await conn.fetchrow("""
         UPDATE dialogues_stat
         SET message_count = message_count + 1
-        WHERE user_id = $1
-        AND id = (
-            SELECT id FROM dialogues_stat
-            WHERE user_id = $1
-            ORDER BY started_at DESC
-            LIMIT 1
-        )
+        WHERE id = $1
         RETURNING message_count
-    """, db_user_id)
+    """, dialogue_id)
+
     if row:
-        print(f"Updated message_count: {row['message_count']}")
-        return row['message_count']
+        message_count = row["message_count"]
+        print(f"✅ Updated message_count: {message_count}, dialogue_id: {dialogue_id}")
+        return message_count, dialogue_id
     else:
-        print("No dialogue found to update message_count.")
+        print("⚠️ Dialogue ID found, but failed to update message_count.")
         return None
+
 
 
 
@@ -922,7 +934,7 @@ async def telegram_webhook(request: Request):
 
         await bot.send_message(chat_id=chat_id, text=response_text)
 
-        msg_count = await increment_message_count(conn, db_user_id)
+        msg_count, dialogue_id = await increment_message_count(conn, db_user_id)
 
 
     finally:
