@@ -760,6 +760,127 @@ async def telegram_webhook(request: Request):
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        thinking_msg = await bot.send_message(chat_id=chat_id, text="🧠 Думаю...")
+
+        await conn.execute(
+            "INSERT INTO dialogs (user_id, role, message, created_at) VALUES ($1, 'user', $2, NOW())",
+            db_user_id, user_text
+        )
+
+        rows = await conn.fetch(
+            "SELECT role, message FROM dialogs WHERE user_id = $1 ORDER BY id DESC LIMIT 10",
+            db_user_id
+        )
+        rows = list(reversed(rows))
+
+        
+        user_messages = [
+            {
+                "role": "assistant" if row["role"] == "ai" else row["role"],
+                "content": row["message"]
+            }
+            for row in rows
+        ]
+
+        print("📦 user_id:", db_user_id)
+        # Витягнути профіль із бази для користувача (припустимо, user_id)
+        profile_row = await conn.fetchrow("SELECT * FROM simulated_personas WHERE user_id = $1", db_user_id)
+        #print("📦 profile_row:", profile_row)
+        if not profile_row:
+            # Якщо профілю немає, можеш повернути порожній список або дефолтний профіль
+            print("📦 profile is empty:")
+            profile_content = "{}"
+        else:
+            # Припустимо, що профіль у таблиці збережений у полі profile_json у вигляді JSON рядка
+            # Збираємо словник із профілем
+            profile_content = {
+                "name": profile_row["name"],
+                "age": profile_row["age"],
+                "country": profile_row["country"],
+                "difficulty_level": profile_row["difficulty_level"],
+                "religious_context": profile_row["religious_context"],
+                "personality": profile_row["personality"],
+                "barriers": profile_row["barriers"],  # якщо список — залишаємо
+                "openness": profile_row["openness"],
+                "goal": profile_row["goal"],
+                "big_five_traits": json.loads(profile_row["big_five_traits"]),
+                "temperament": profile_row["temperament"],
+                "worldview_and_values": profile_row["worldview_and_values"],
+                "beliefs": profile_row["beliefs"],
+                "motivation_and_goals": profile_row["motivation_and_goals"],
+                "background": profile_row["background"],
+                "erikson_stage": profile_row["erikson_stage"],
+                "emotional_intelligence": profile_row["emotional_intelligence"],
+                "thinking_style": profile_row["thinking_style"],
+                "biological_factors": profile_row["biological_factors"],
+                "social_context": profile_row["social_context"],
+                "enneagram": profile_row["enneagram"],
+                "disc_profile": profile_row["disc_profile"],
+                "stress_tolerance": profile_row["stress_tolerance"],
+                "self_image": profile_row["self_image"],
+                "cognitive_biases": profile_row["cognitive_biases"],
+                "attachment_style": profile_row["attachment_style"],
+                "religion": profile_row["religion"],
+                "trauma_history": profile_row["trauma_history"],
+                "stress_level": profile_row["stress_level"],
+                "habits": profile_row["habits"],
+                "why_contacted_us": profile_row["why_contacted_us"],
+                "digital_behavior": profile_row["digital_behavior"],
+                "peer_pressure": profile_row["peer_pressure"],
+                "attachment_history": profile_row["attachment_history"],
+                "culture": profile_row["culture"],
+                "neuroprofile": profile_row["neuroprofile"],
+                "meta_programs": profile_row["meta_programs"],
+                "philosophical_views": profile_row["philosophical_views"],
+            }
+        
+            # перетворимо на гарно форматований текст
+            profile_content = json.dumps(profile_content, ensure_ascii=False, indent=2)
+            #print("📦 profile_content:", profile_content)
+        
+        # Створюємо system prompt
+        system_message = {
+            "role": "system",
+            "content": f""You behave like a person who possesses the personality traits specified in the profile: {profile_content}. You do not take the initiative to offer consultative help as a typical chat assistant would. Instead, you tend to ask simple or banal questions yourself." 
+        }
+        
+        # Далі формуємо список повідомлень, додаємо system_message спочатку, потім user_messages
+        messages = [system_message] + user_messages
+
+    
+        # messages = [{"role": row["role"], "content": row["message"]} for row in rows]
+        # messages = [{'role': 'user', 'content': user_text}]
+
+        response_text = await query_openai_chat(messages)
+
+        await conn.execute(
+            "INSERT INTO dialogs (user_id, role, message, created_at) VALUES ($1, 'ai', $2, NOW())",
+            db_user_id, response_text
+        )
+
+        try:
+            await thinking_msg.delete()
+        except:
+            pass
+
+        await bot.send_message(chat_id=chat_id, text=response_text)
+
+
     finally:
         await conn.close()
 
