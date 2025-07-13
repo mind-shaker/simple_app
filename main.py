@@ -41,6 +41,28 @@ async def send_phrase(conn, bot, chat_id, db_user_id, phrase_column: str, prefix
         print(f"❌ Error fetching {phrase_column}: {e}")
 
 
+#=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Збільшення лічильника повідомлень" 0
+async def increment_message_count(conn, db_user_id):
+    row = await conn.fetchrow("""
+        UPDATE dialogues_stat
+        SET message_count = message_count + 1
+        WHERE user_id = $1
+        AND id = (
+            SELECT id FROM dialogues
+            WHERE user_id = $1
+            ORDER BY started_at DESC
+            LIMIT 1
+        )
+        RETURNING message_count
+    """, db_user_id)
+    if row:
+        print(f"Updated message_count: {row['message_count']}")
+        return row['message_count']
+    else:
+        print("No dialogue found to update message_count.")
+        return None
+
+
 
 
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Виклик OpenAI API"
@@ -364,6 +386,14 @@ async def telegram_webhook(request: Request):
                         "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                         db_user_id
                     )
+
+                await conn.execute(
+                    """
+                    INSERT INTO dialogues_stat (user_id)
+                    VALUES ($1)
+                    """,
+                    db_user_id  # наприклад, db_user_id
+                )
                     
                 mark = 1
             else:
@@ -548,6 +578,17 @@ async def telegram_webhook(request: Request):
                     "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                     db_user_id
                 )
+
+
+            await conn.execute(
+                """
+                INSERT INTO dialogues_stat (user_id)
+                VALUES ($1)
+                """,
+                db_user_id  # наприклад, db_user_id
+            )
+
+            
             mark = 1
 
 
@@ -872,6 +913,7 @@ async def telegram_webhook(request: Request):
             "INSERT INTO dialogs (user_id, role, message, created_at) VALUES ($1, 'ai', $2, NOW())",
             db_user_id, response_text
         )
+        
 
         try:
             await thinking_msg.delete()
@@ -879,6 +921,8 @@ async def telegram_webhook(request: Request):
             pass
 
         await bot.send_message(chat_id=chat_id, text=response_text)
+
+        msg_count = await increment_message_count(conn, db_user_id)
 
 
     finally:
