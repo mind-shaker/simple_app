@@ -856,7 +856,7 @@ async def telegram_webhook(request: Request):
         # Створюємо system prompt
         system_message = {
             "role": "system",
-            "content": f""You behave like a person who possesses the personality traits specified in the profile: {profile_content}. You do not take the initiative to offer consultative help as a typical chat assistant would. Instead, you tend to ask simple or banal questions yourself." 
+            "content": f"You behave like a person who possesses the personality traits specified in the profile: {profile_content}. You do not take the initiative to offer consultative help as a typical chat assistant would. Instead, you tend to ask simple or banal questions yourself."
         }
         
         # Далі формуємо список повідомлень, додаємо system_message спочатку, потім user_messages
