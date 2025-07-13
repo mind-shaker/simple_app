@@ -48,7 +48,7 @@ async def increment_message_count(conn, db_user_id):
         SET message_count = message_count + 1
         WHERE user_id = $1
         AND id = (
-            SELECT id FROM dialogues
+            SELECT id FROM dialogues_stat
             WHERE user_id = $1
             ORDER BY started_at DESC
             LIMIT 1
