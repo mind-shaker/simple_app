@@ -830,9 +830,12 @@ async def telegram_webhook(request: Request):
 
         thinking_msg = await bot.send_message(chat_id=chat_id, text="🧠 Думаю...")
 
+
+        msg_count, dialogue_id = await increment_message_count(conn, db_user_id)
+
         await conn.execute(
-            "INSERT INTO dialogs (user_id, role, message, created_at) VALUES ($1, 'user', $2, NOW())",
-            db_user_id, user_text
+            "INSERT INTO dialogs (user_id, role, message, created_at, id_dialogue) VALUES ($1, 'user', $2, NOW(), $3)",
+            db_user_id, user_text, dialogue_id
         )
 
         rows = await conn.fetch(
@@ -921,9 +924,11 @@ async def telegram_webhook(request: Request):
 
         response_text = await query_openai_chat(messages)
 
+
+        
         await conn.execute(
-            "INSERT INTO dialogs (user_id, role, message, created_at) VALUES ($1, 'ai', $2, NOW())",
-            db_user_id, response_text
+            "INSERT INTO dialogs (user_id, role, message, created_at, id_dialogue) VALUES ($1, 'ai', $2, NOW(), $3)",
+            db_user_id, response_text, dialogue_id
         )
         
 
@@ -934,7 +939,7 @@ async def telegram_webhook(request: Request):
 
         await bot.send_message(chat_id=chat_id, text=response_text)
 
-        msg_count, dialogue_id = await increment_message_count(conn, db_user_id)
+
 
 
     finally:
