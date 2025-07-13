@@ -74,6 +74,44 @@ async def increment_message_count(conn, db_user_id):
         return None
 
 
+#=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "РЕЗЮМУВАННЯ від чату GPT" 0
+async def summarize_dialogue(conn, dialogue_id, chat_id):
+    # Витягнути всі повідомлення діалогу
+    rows = await conn.fetch(
+        "SELECT role, message FROM dialogs WHERE id_dialogue = $1 ORDER BY created_at ASC",
+        dialogue_id
+    )
+
+    # Формуємо текст діалогу
+    dialogue_text = "\n".join([f"{row['role'].capitalize()}: {row['message']}" for row in rows])
+
+    # Системний prompt із роллю психолога
+    system_prompt = {
+        "role": "system",
+        "content": "You are an expert psychologist. Analyze the following dialogue carefully."
+    }
+
+    # User prompt з проханням про резюмування
+    user_prompt = {
+        "role": "user",
+        "content": (
+            "Please summarize this dialogue focusing on whether the conversation was conducted correctly, "
+            "how appropriate and non-intrusive were the attempts to interest the person in faith in God, "
+            "and whether these attempts were successful or not.\n\n"
+            f"Dialogue:\n{dialogue_text}"
+        )
+    }
+
+    messages = [system_prompt, user_prompt]
+
+    # Виклик OpenAI API (припускаю, що є твоя функція query_openai_chat)
+    summary = await query_openai_chat(messages)
+
+    # Відправка у Telegram
+    await bot.send_message(chat_id=chat_id, text=summary)
+
+    return summary
+
 
 
 
@@ -938,6 +976,23 @@ async def telegram_webhook(request: Request):
             pass
 
         await bot.send_message(chat_id=chat_id, text=response_text)
+
+
+        if msg_count and msg_count >= 50:
+            await summarize_dialogue(conn, dialogue_id, chat_id)
+            await bot.send_message(
+                chat_id=chat_id,
+                text="Thank you for the conversation. \nYou will automatically be offered to generate a new respondent profile and start a new dialogue.",
+                parse_mode="Markdown"
+            )
+            await conn.execute(
+                "UPDATE user_commands SET command = 'new_dialogue' WHERE user_id = $1",
+                db_user_id
+            )
+           
+
+
+    
 
 
 
