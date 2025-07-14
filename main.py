@@ -4,6 +4,8 @@ import os
 import asyncpg
 from openai import AsyncOpenAI
 import json
+import asyncio
+import requests
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -13,6 +15,20 @@ bot = Bot(token=TELEGRAM_TOKEN)
 app = FastAPI()
 
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+
+# 🔄 Встановлення webhook при старті серверу
+@app.on_event("startup")
+async def set_webhook():
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/setWebhook"
+    webhook_url = "https://simple-app-aifd.onrender.com/webhook"
+    data = {"url": webhook_url}
+    try:
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(None, lambda: requests.post(url, data=data))
+        print("📡 Webhook set status:", response.json())
+    except Exception as e:
+        print("❌ Помилка при встановленні webhook:", e)
+
 
 async def get_connection():
     return await asyncpg.connect(DATABASE_URL)
