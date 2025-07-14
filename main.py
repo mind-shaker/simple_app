@@ -978,7 +978,7 @@ async def telegram_webhook(request: Request):
         await bot.send_message(chat_id=chat_id, text=response_text)
 
 
-        if msg_count and msg_count >= 50:
+        if msg_count and msg_count >= 30:
             await summarize_dialogue(conn, dialogue_id, chat_id)
             await bot.send_message(
                 chat_id=chat_id,
