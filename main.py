@@ -292,9 +292,11 @@ async def telegram_webhook(request: Request):
             messages = [
                 {
                     "role": "user",
-                    "content": f"Determine whether the following phrase: {user_text} indicates agreement in the language specified by the ISO 639-2 code: {language}." 
+                    "content": (
+                        f"Determine whether the following phrase: {user_text} indicates agreement in the language specified by the ISO 639-2 code: {language}." 
                         f"Return the English word 'yes' if the phrase indicates agreement, or 'no' if it does not."
                         f"Return exactly yes or no as plain text, without any quotes or formatting."
+                    )
                 }
             ]
             
