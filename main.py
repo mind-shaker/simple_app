@@ -923,7 +923,7 @@ async def telegram_webhook(request: Request):
         print("📦 user_id:", db_user_id)
         # Витягнути профіль із бази для користувача (припустимо, user_id)
         profile_row = await conn.fetchrow(
-            "SELECT * FROM simulated_personas WHERE user_id = $1 AND dialogue_id = $2",
+            "SELECT * FROM simulated_personas WHERE user_id = $1 AND id_dialogue = $2",
             db_user_id, dialogue_id
         )
         #print("📦 profile_row:", profile_row)
