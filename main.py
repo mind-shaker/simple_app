@@ -677,6 +677,14 @@ async def telegram_webhook(request: Request):
         
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        #/////////////////////////////////// ОБРОБКА ПЕРЕРИВАННЯ ПОТОЧНОГО ДІАЛОГУ //////////////////////////////////////////
+        if user_text == "/new":
+            await bot.send_message(chat_id=chat_id, text="👋 Zaglushka.")
+            return {"status": "commad_new"}
+
+
+        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
         print(f"existing_user: {existing_user}")
 
