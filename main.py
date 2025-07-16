@@ -706,10 +706,11 @@ async def telegram_webhook(request: Request):
             db_user_id
         )
         print(f"row ----------------------------------------- : {row}")
+        print(f"row phrase_1 : {row["phrase_1"]})
         if row:
             print("✅ Користувач існує і поле phrase_1 заповнене")
         else:
-            print(f"Тест пустої комірки перекладу")
+            print(f"Зберігаємо переклад службових реплік")
             print("❌ Або користувача немає, або поле language порожнє")
             #await bot.send_message(chat_id=chat_id, text=f"✅ Switching to your language of communication.")
                 
