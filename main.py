@@ -709,7 +709,7 @@ async def telegram_webhook(request: Request):
         
         if row:
             print("✅ Користувач існує і поле phrase_1 заповнене")
-            print(f"row phrase_1 : {row['phrase_1']}")
+            #print(f"row phrase_1 : {row['phrase_1']}")
         else:
             print(f"Зберігаємо переклад службових реплік")
             print("❌ Або користувача немає, або поле language порожнє")
