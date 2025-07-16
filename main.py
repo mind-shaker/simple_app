@@ -705,7 +705,7 @@ async def telegram_webhook(request: Request):
             "SELECT 1 FROM translated_phrases WHERE user_id = $1 AND phrase_1 IS NOT NULL",
             db_user_id
         )
-        
+        print(f"row ----------------------------------------- : {row}")
         if row:
             print("✅ Користувач існує і поле phrase_1 заповнене")
         else:
@@ -883,20 +883,12 @@ async def telegram_webhook(request: Request):
 
 
 
+        
+        #====================================================================================================================
+        #////////////////////////////////////////////////////// ДІАЛОГ  //////////////////////////////////////////////////////
+        #====================================================================================================================
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+        
         thinking_msg = await bot.send_message(chat_id=chat_id, text="🧠 Думаю...")
 
 
@@ -993,14 +985,12 @@ async def telegram_webhook(request: Request):
 
         response_text = await query_openai_chat(messages)
 
-
-        
+  
         await conn.execute(
             "INSERT INTO dialogs (user_id, role, message, created_at, id_dialogue) VALUES ($1, 'ai', $2, NOW(), $3)",
             db_user_id, response_text, dialogue_id
         )
         
-
         try:
             await thinking_msg.delete()
         except:
@@ -1008,7 +998,13 @@ async def telegram_webhook(request: Request):
 
         await bot.send_message(chat_id=chat_id, text=response_text)
 
+        #====================================================================================================================
+        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        #====================================================================================================================
 
+        
+
+        #///////////////////////////////// ПИТАННЯ ЗАВЕРШЕННЯ ДІАЛОЛГУ (вичерпання месиджів) ////////////////////////////////
         if msg_count and msg_count >= 33:
             init_msg = await bot.send_message(chat_id=chat_id, text=f"🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔")
             await asyncio.sleep(5)  # Затримка 5 секунд
@@ -1020,6 +1016,8 @@ async def telegram_webhook(request: Request):
                 "UPDATE user_commands SET command = 'new_dialogue' WHERE user_id = $1",
                 db_user_id
             )
+            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_6", "🔥 ")
+        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
            
 
 
