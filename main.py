@@ -6,6 +6,7 @@ import asyncpg
 import redis.asyncio as redis
 from openai import AsyncOpenAI
 import json
+import asyncio
 
 print("ТЕСТ НА ПЕРШИЙ ВХІД В БОТА")
 print(f"ТЕСТ НА ПЕРШИЙ ВХІД")
@@ -85,19 +86,26 @@ async def summarize_dialogue(conn, dialogue_id, chat_id):
     # Формуємо текст діалогу
     dialogue_text = "\n".join([f"{row['role'].capitalize()}: {row['message']}" for row in rows])
 
+
+    row = await conn.fetchrow("SELECT language FROM users WHERE id = $1", db_user_id)
+        if row:
+            language = row["language"]
+        else:
+            language = 'eng'  # або значення за замовчуванням
+
     # Системний prompt із роллю психолога
     system_prompt = {
         "role": "system",
-        "content": "You are an expert psychologist. Analyze the following dialogue carefully."
+        "content": "You are an expert psychologist. Analyze the following dialogue carefully.Reply in the language specified by ISO 639-2: {language}"
     }
 
     # User prompt з проханням про резюмування
     user_prompt = {
         "role": "user",
         "content": (
-            "Please summarize this dialogue focusing on whether the conversation was conducted correctly, "
-            "how appropriate and non-intrusive were the attempts to interest the person in faith in God, "
-            "and whether these attempts were successful or not.\n\n"
+            "Please summarize this conversation, focusing on whether openness was observed in the interlocutors during the dialogue."
+            "How appropriate and non-intrusive were my attempts to engage the person in faith in God, and were these attempts successful?"
+            "Was I able to lead the person to reflect on the topic of faith in God and following Him?\n\n"
             f"Dialogue:\n{dialogue_text}"
         )
     }
@@ -724,8 +732,8 @@ async def telegram_webhook(request: Request):
                 "Let's chat!", # - phrase_9
                 "Initializing the characteristics of your conversation partner...", # - phrase_10
                 "The profile of your conversation partner already exists. Let's continue the dialogue.", # - phrase_11
-                "Conversation partner's profile generated.", # - phrase_12
-                "Conversation partner's profile generated.", # - phrase_13
+                "Your dialogue has come to an end. We will now conduct a detailed analysis and summarize the results.", # - phrase_12
+                "\n\nThank you for the conversation. \nYou will automatically be offered to generate a new respondent profile and start a new dialogue.", # - phrase_13
                 "Conversation partner's profile generated.", # - phrase_14
                 "Conversation partner's profile generated." # - phrase_15
             )
@@ -1002,12 +1010,12 @@ async def telegram_webhook(request: Request):
 
 
         if msg_count and msg_count >= 30:
+            init_msg = await bot.send_message(chat_id=chat_id, text=f"🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔")
+            await asyncio.sleep(5)  # Затримка 5 секунд
+            await init_msg.delete()
+            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_12", "✅ ")
             await summarize_dialogue(conn, dialogue_id, chat_id)
-            await bot.send_message(
-                chat_id=chat_id,
-                text="Thank you for the conversation. \nYou will automatically be offered to generate a new respondent profile and start a new dialogue.",
-                parse_mode="Markdown"
-            )
+            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_13", "✅ ")
             await conn.execute(
                 "UPDATE user_commands SET command = 'new_dialogue' WHERE user_id = $1",
                 db_user_id
