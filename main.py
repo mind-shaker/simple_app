@@ -709,7 +709,15 @@ async def telegram_webhook(request: Request):
         
         if row:
             print("✅ Користувач існує і поле phrase_1 заповнене")
-            #print(f"row phrase_1 : {row['phrase_1']}")
+            row_1 = await conn.fetchrow(
+                "SELECT phrase_1 FROM translated_phrases WHERE user_id = $1",
+                db_user_id
+            )
+            
+            if row_1 is not None:
+                phrase_value = row['phrase_1']  # Отримуємо значення phrase_1
+                print(f"Значення phrase_1: {phrase_value}")
+
         else:
             print(f"Зберігаємо переклад службових реплік")
             print("❌ Або користувача немає, або поле language порожнє")
