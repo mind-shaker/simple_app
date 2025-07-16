@@ -88,10 +88,10 @@ async def summarize_dialogue(conn, dialogue_id, chat_id):
 
 
     row = await conn.fetchrow("SELECT language FROM users WHERE id = $1", db_user_id)
-        if row:
-            language = row["language"]
-        else:
-            language = 'eng'  # або значення за замовчуванням
+    if row:
+        language = row["language"]
+    else:
+        language = 'eng'  # або значення за замовчуванням
 
     # Системний prompt із роллю психолога
     system_prompt = {
