@@ -76,7 +76,7 @@ async def increment_message_count(conn, db_user_id):
 
 
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "РЕЗЮМУВАННЯ від чату GPT" 0
-async def summarize_dialogue(conn, dialogue_id, chat_id):
+async def summarize_dialogue(conn, dialogue_id, chat_id, db_user_id):
     # Витягнути всі повідомлення діалогу
     rows = await conn.fetch(
         "SELECT role, message FROM dialogs WHERE id_dialogue = $1 ORDER BY created_at ASC",
@@ -1009,12 +1009,12 @@ async def telegram_webhook(request: Request):
         await bot.send_message(chat_id=chat_id, text=response_text)
 
 
-        if msg_count and msg_count >= 100:
+        if msg_count and msg_count >= 32:
             init_msg = await bot.send_message(chat_id=chat_id, text=f"🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔")
             await asyncio.sleep(5)  # Затримка 5 секунд
             await init_msg.delete()
             await send_phrase(conn, bot, chat_id, db_user_id, "phrase_12", "✅ ")
-            await summarize_dialogue(conn, dialogue_id, chat_id)
+            await summarize_dialogue(conn, dialogue_id, chat_id, db_user_id)
             await send_phrase(conn, bot, chat_id, db_user_id, "phrase_13", "✅ ")
             await conn.execute(
                 "UPDATE user_commands SET command = 'new_dialogue' WHERE user_id = $1",
