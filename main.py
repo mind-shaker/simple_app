@@ -816,12 +816,7 @@ async def telegram_webhook(request: Request):
                 phrase_15 = EXCLUDED.phrase_15
             """, db_user_id, *translated_phrases[:15])
     
-    
-      
-            await conn.execute(
-                "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
-                db_user_id
-            )
+
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         #/////////////////////////////////////// ТЕСТ комірки ДЕ ВКАЗАНО ІМЯ ////////////////////////////////////////////////
@@ -903,6 +898,7 @@ async def telegram_webhook(request: Request):
 
 
         msg_count, dialogue_id = await increment_message_count(conn, db_user_id)
+        print("📦 dialogue_id:", dialogue_id)
 
         await conn.execute(
             "INSERT INTO dialogs (user_id, role, message, created_at, id_dialogue) VALUES ($1, 'user', $2, NOW(), $3)",
@@ -926,7 +922,10 @@ async def telegram_webhook(request: Request):
 
         print("📦 user_id:", db_user_id)
         # Витягнути профіль із бази для користувача (припустимо, user_id)
-        profile_row = await conn.fetchrow("SELECT * FROM simulated_personas WHERE user_id = $1", db_user_id)
+        profile_row = await conn.fetchrow(
+            "SELECT * FROM simulated_personas WHERE user_id = $1 AND dialogue_id = $2",
+            db_user_id, dialogue_id
+        )
         #print("📦 profile_row:", profile_row)
         if not profile_row:
             # Якщо профілю немає, можеш повернути порожній список або дефолтний профіль
