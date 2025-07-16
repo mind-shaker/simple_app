@@ -715,7 +715,7 @@ async def telegram_webhook(request: Request):
             )
             
             if row_1 is not None:
-                phrase_value = row['phrase_1']  # Отримуємо значення phrase_1
+                phrase_value = row_1['phrase_1']  # Отримуємо значення phrase_1
                 print(f"Значення phrase_1: {phrase_value}")
 
         else:
