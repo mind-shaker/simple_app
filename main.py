@@ -284,7 +284,94 @@ async def telegram_webhook(request: Request):
 
         
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                
+        
+        
+        #/////////////////////////////////// ОБРОБКА ПЕРЕРИВАННЯ ПОТОЧНОГО ДІАЛОГУ //////////////////////////////////////////
+        if user_text == "/new":
+            # Знаходимо ID останнього діалогу користувача
+            row_id = await conn.fetchrow("""
+                SELECT id FROM dialogues_stat
+                WHERE user_id = $1
+                ORDER BY started_at DESC
+                LIMIT 1
+            """, db_user_id)
+        
+            if not row_id:
+                print("❌ No dialogue found for this user.")
+                return None
+        
+            dialogue_id = row_id["id"]
 
+            row = await conn.fetchrow(
+                "SELECT message_count FROM dialogues_stat WHERE id = $1",
+                dialogue_id
+            )
+            if row:
+                message_count = row["message_count"]
+                print(f"📨 message_count for dialogue {dialogue_id}: {message_count}")
+            else:
+                print(f"❌ Dialogue with id {dialogue_id} not found.")
+                return None
+
+            await bot.send_message(chat_id=chat_id, text=" Vy vyjavyly bazannya perervaty potocny dialog stvoryvshy novy")
+            if message_count >= 30:
+                await bot.send_message(chat_id=chat_id, text="👋 U vas dostatno povidomlen dlya rezjumuvannya. Bazaete rezyumuvaty potochny dialog?")
+                await conn.execute(
+                    "UPDATE user_commands SET command = 'continue_new' WHERE user_id = $1",
+                    db_user_id
+                )
+                return {"status": "commad_new"}
+
+            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_13", "✅ ")
+            await conn.execute(
+                "UPDATE user_commands SET command = 'new_dialogue' WHERE user_id = $1",
+                db_user_id
+            )
+            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_6", "🔥 ")
+            return {"status": "commad_new"}
+
+        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+        #/////////////////////// ОБРОБКА РЕСПОНСУ на питання НАЛАШТУВАНЬ СПІВРОЗМОВНИКА //////////////////////////////////////
+        if command_value == 'continue_new':
+            print(f"in body dialogue: {user_text}")
+            
+            row = await conn.fetchrow("SELECT language FROM users WHERE id = $1", db_user_id)
+            if row:
+                language = row["language"]
+            else:
+                language = 'eng'  # або значення за замовчуванням
+            
+            
+            messages = [
+                {
+                    "role": "user",
+                    "content": (
+                        f"Determine whether the following phrase: {user_text} indicates agreement in the language specified by the ISO 639-2 code: {language}." 
+                        f"Return the English word 'yes' if the phrase indicates agreement, or 'no' if it does not."
+                        f"Return exactly yes or no as plain text, without any quotes or formatting."
+                    )
+                }
+            ]
+            user_answer = await query_openai_chat(messages)
+            print(f"user_answer: {user_answer}")
+
+            if user_answer.lower() in ("yes", "y"):
+                # rezyumuvannya
+                print(f"rezyumuvannya -----------------------------------")
+                await summarize_dialogue(conn, dialogue_id, chat_id, db_user_id)
+            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_13", "✅ ")
+            await conn.execute(
+                "UPDATE user_commands SET command = 'new_dialogue' WHERE user_id = $1",
+                db_user_id
+            )
+            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_6", "🔥 ")
+            return {"status": "commad_new"}
+            
 
         #/////////////////////// ОБРОБКА РЕСПОНСУ на питання НАЛАШТУВАНЬ СПІВРОЗМОВНИКА //////////////////////////////////////
         if command_value == 'new_dialogue':
@@ -677,13 +764,7 @@ async def telegram_webhook(request: Request):
         
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        #/////////////////////////////////// ОБРОБКА ПЕРЕРИВАННЯ ПОТОЧНОГО ДІАЛОГУ //////////////////////////////////////////
-        if user_text == "/new":
-            await bot.send_message(chat_id=chat_id, text="👋 Zaglushka.")
-            return {"status": "commad_new"}
 
-
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
         print(f"existing_user: {existing_user}")
