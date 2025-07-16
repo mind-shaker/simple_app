@@ -1009,7 +1009,7 @@ async def telegram_webhook(request: Request):
         await bot.send_message(chat_id=chat_id, text=response_text)
 
 
-        if msg_count and msg_count >= 30:
+        if msg_count and msg_count >= 100:
             init_msg = await bot.send_message(chat_id=chat_id, text=f"🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔🔔")
             await asyncio.sleep(5)  # Затримка 5 секунд
             await init_msg.delete()
