@@ -143,6 +143,7 @@ async def query_openai_chat(messages: list[dict]) -> str:
         return f"⚠️ Помилка при запиті до OpenAI API: {e}"
 
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Перевірка часу простою"
+
 async def check_dialog_times():
     conn = await asyncpg.connect(DATABASE_URL)
     rows = await conn.fetch("""
@@ -156,6 +157,10 @@ async def check_dialog_times():
     for row in rows:
         user_id = row['user_id']
         last_created = row['created_at']
+
+        if last_created.tzinfo is None:
+            last_created = last_created.replace(tzinfo=timezone.utc)
+
         elapsed = now - last_created
         print(f"user_id={user_id}, last message at {last_created}, elapsed: {elapsed}")
 
