@@ -7,8 +7,11 @@ import redis.asyncio as redis
 from openai import AsyncOpenAI
 import json
 import asyncio
+from datetime import datetime, timedelta, timezone
 
 print("ТЕСТ НА ПЕРШИЙ ВХІД В БОТА")
+
+
 
 #=================================================== Отримання конфігурації з середовища
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -138,6 +141,43 @@ async def query_openai_chat(messages: list[dict]) -> str:
         return response.choices[0].message.content
     except Exception as e:
         return f"⚠️ Помилка при запиті до OpenAI API: {e}"
+
+#=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Перевірка часу простою"
+async def check_dialog_times():
+    conn = await asyncpg.connect(DATABASE_URL)
+    rows = await conn.fetch("""
+        SELECT DISTINCT ON (user_id) user_id, id_dialogue, created_at
+        FROM dialogs
+        ORDER BY user_id, created_at DESC
+    """)
+
+    now = datetime.now(timezone.utc)
+
+    for row in rows:
+        user_id = row['user_id']
+        last_created = row['created_at']
+        elapsed = now - last_created
+        print(f"user_id={user_id}, last message at {last_created}, elapsed: {elapsed}")
+
+        if elapsed > timedelta(hours=5):
+            print(f"⏳ Час користувача {user_id} вичерпано! Надсилаємо повідомлення...")
+
+            # Тут можна додати логіку надсилання повідомлення через Telegram
+
+    await conn.close()
+
+
+#=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Періодичного опитування"
+async def periodic_check():
+    while True:
+        await check_dialog_times()
+        await asyncio.sleep(600)  # 10 хвилин
+
+
+#=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Запуск фонової процедури"
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(periodic_check())
 
 #=================================================== Обробка Telegram webhook
 @app.post("/webhook")
