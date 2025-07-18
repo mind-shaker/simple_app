@@ -203,7 +203,13 @@ async def telegram_webhook(request: Request):
     
             return {"ok": True}
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+        
+        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        if user_text == "/whoami":
+            await bot.send_message(chat_id=chat_id, text=f"Ваш Telegram ID: {user_id}")
+            return {"ok": True"}
+        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
         #////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО МОВУ СПІЛКУВАННЯ ////////////////////////////////////
         print("ОБРОБНИК команди - language")
         if command_value == 'language':
@@ -797,7 +803,7 @@ async def telegram_webhook(request: Request):
 
 
         existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
-        print(f"existing_user: {existing_user}")
+        #print(f"existing_user: {existing_user}")
 
         #=========================================== ФУНКЦІЇ ПОШУКУ НЕВИЗНАЧЕНИХ ХАРАКТЕРИСТИК =============================
 
@@ -826,7 +832,7 @@ async def telegram_webhook(request: Request):
             "SELECT 1 FROM translated_phrases WHERE user_id = $1 AND phrase_1 IS NOT NULL",
             db_user_id
         )
-        print(f"row ----------------------------------------- : {row}")
+        #print(f"row ----------------------------------------- : {row}")
         
         if row:
             print("✅ Користувач існує і поле phrase_1 заповнене")
