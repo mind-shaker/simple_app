@@ -196,7 +196,7 @@ async def telegram_webhook(request: Request):
                 await bot.send_message(chat_id=chat_id, text="У вас немає прав.")
                 return {"ok": True}
     
-            mem_used = 252 kB
+            mem_used = 252451
             bal = get_balance()
             await bot.send_message(chat_id=chat_id,
                                    text=f"Використано памʼяті: {mem_used} MB\nБаланс: {bal} грн")
