@@ -3,7 +3,7 @@ from telegram import Bot
 import os
 import asyncio
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")  # обов’язково в .env
+TELEGRAM_TOKEN = 1234  # обов’язково в .env
 bot = Bot(token=TELEGRAM_TOKEN)
 
 app = FastAPI()
