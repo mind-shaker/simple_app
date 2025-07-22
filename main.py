@@ -1,9 +1,11 @@
 from fastapi import FastAPI, Request
 from telegram import Bot
+from dotenv import load_dotenv
 import os
-import asyncio
 
-TELEGRAM_TOKEN = 123456789:ABCDefghIJKLmnopQrstUVWXyz  # обов’язково в .env
+load_dotenv()  # завантажити змінні з .env
+
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 bot = Bot(token=TELEGRAM_TOKEN)
 
 app = FastAPI()
