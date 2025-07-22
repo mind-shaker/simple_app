@@ -16,6 +16,6 @@ async def telegram_webhook(request: Request):
     chat_id = message.get("chat", {}).get("id")
 
     if chat_id:
-        await bot.send_message(chat_id=chat_id, text="Привіт!")
+        await bot.send_message(chat_id=chat_id, text="шо хочеш?")
 
     return {"status": "ok"}
