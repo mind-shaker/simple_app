@@ -3,7 +3,7 @@ from telegram import Bot
 import os
 import asyncio
 
-TELEGRAM_TOKEN = 1234  # обов’язково в .env
+TELEGRAM_TOKEN = 123456789:ABCDefghIJKLmnopQrstUVWXyz  # обов’язково в .env
 bot = Bot(token=TELEGRAM_TOKEN)
 
 app = FastAPI()
