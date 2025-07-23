@@ -437,10 +437,21 @@ async def telegram_webhook(request: Request):
             else:
                 print(f"❌ Dialogue with id {dialogue_id} not found.")
                 return None
-
-            await bot.send_message(chat_id=chat_id, text=" Vy vyjavyly bazannya perervaty potocny dialog stvoryvshy novy")
+            translated = await translate_phrase(conn, db_user_id, "You have interrupted the current conversation. You will be able to start a new one in a few seconds.")
+            await bot.send_message(
+                chat_id=chat_id,
+                text="🔥 "+translated,
+                parse_mode="Markdown"
+            )
+            #await bot.send_message(chat_id=chat_id, text=" Vy vyjavyly bazannya perervaty potocny dialog stvoryvshy novy")
             if message_count >= 30:
-                await bot.send_message(chat_id=chat_id, text="👋 U vas dostatno povidomlen dlya rezjumuvannya. Bazaete rezyumuvaty potochny dialog?")
+                translated = await translate_phrase(conn, db_user_id, "Your current conversation is quite lengthy. Would you like to summarize it?")
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text="🔥 "+ translated,
+                    parse_mode="Markdown"
+                )
+                #await bot.send_message(chat_id=chat_id, text="👋 U vas dostatno povidomlen dlya rezjumuvannya. Bazaete rezyumuvaty potochny dialog?")
                 await conn.execute(
                     "UPDATE user_commands SET command = 'continue_new' WHERE user_id = $1",
                     db_user_id
@@ -1197,7 +1208,13 @@ async def telegram_webhook(request: Request):
         #====================================================================================================================
 
         print("ДІАЛОГ")
-        thinking_msg = await bot.send_message(chat_id=chat_id, text="🧠 Думаю...")
+        translated = await translate_phrase(conn, db_user_id, "I'm thinking...")
+        thinking_msg = await bot.send_message(
+            chat_id=chat_id,
+            text="🧠 "+ translated,
+            parse_mode="Markdown"
+        )
+        #thinking_msg = await bot.send_message(chat_id=chat_id, text="🧠 Думаю...")
 
 
         msg_count, dialogue_id = await increment_message_count(conn, db_user_id)
@@ -1333,7 +1350,7 @@ async def telegram_webhook(request: Request):
                 text="✅ "+translated,
                 parse_mode="Markdown"
             )
-            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_12", "✅ ")
+            #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_12", "✅ ")
             await summarize_dialogue(conn, dialogue_id, chat_id, db_user_id)
             translated = await translate_phrase(conn, db_user_id, "Conversation partner's profile generated.")
             init_msg =await bot.send_message(
@@ -1341,7 +1358,7 @@ async def telegram_webhook(request: Request):
                 text="✅ "+translated,
                 parse_mode="Markdown"
             )
-            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_13", "✅ ")
+            #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_13", "✅ ")
             await conn.execute(
                 "UPDATE user_commands SET command = 'new_dialogue' WHERE user_id = $1",
                 db_user_id
@@ -1353,7 +1370,7 @@ async def telegram_webhook(request: Request):
                 text="🔥 "+translated,
                 parse_mode="Markdown"
             )
-            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_6", "🔥 ")
+            #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_6", "🔥 ")
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
            
 
