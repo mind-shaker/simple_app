@@ -38,18 +38,6 @@ async def get_connection():
     print(f"ВХІД в базу даних")
     return await asyncpg.connect(DATABASE_URL)
 
-#=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Виведення в ТЕЛЕГРАМ перекладених фраз" 0
-async def send_phrase(conn, bot, chat_id, db_user_id, phrase_column: str, prefix: str = ""):
-    query = f"SELECT {phrase_column} FROM translated_phrases WHERE user_id = $1 ORDER BY id DESC LIMIT 1"
-    try:
-        row = await conn.fetchrow(query, db_user_id)
-        print(f"row {phrase_column}: {row}")
-        text = row[phrase_column] if row and row[phrase_column] else None
-        if text:
-            feedback = await bot.send_message(chat_id=chat_id, text=prefix + text)
-            return feedback
-    except Exception as e:
-        print(f"❌ Error fetching {phrase_column}: {e}")
 
 
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Переклад поточної фрази на мову користувача" 0
@@ -437,7 +425,7 @@ async def telegram_webhook(request: Request):
             else:
                 print(f"❌ Dialogue with id {dialogue_id} not found.")
                 return None
-            translated = await translate_phrase(conn, db_user_id, "You have interrupted the current conversation. You will be able to start a new one in a few seconds.")
+            translated = await translate_phrase(conn, db_user_id, "You have interrupted the current conversation.")
             await bot.send_message(
                 chat_id=chat_id,
                 text="🔥 "+translated,
@@ -982,130 +970,6 @@ async def telegram_webhook(request: Request):
             return {"status": "waiting_language"}
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        #////////////////////////////// ТЕСТ комірки В ТАБЛИЦІ ПЕРЕКЛАДІВ (з миттєвим заповненням) //////////////////////////
-        print("ТЕСТ нафвності перекладених фраз")
-        row = await conn.fetchrow(
-            "SELECT 1 FROM translated_phrases WHERE user_id = $1 AND phrase_1 IS NOT NULL",
-            db_user_id
-        )
-        #print(f"row ----------------------------------------- : {row}")
-        
-        if row:
-            print("✅ Користувач існує і поле phrase_1 заповнене")
-            row_1 = await conn.fetchrow(
-                "SELECT phrase_1 FROM translated_phrases WHERE user_id = $1",
-                db_user_id
-            )
-            
-            if row_1 is not None:
-                phrase_value = row_1['phrase_1']  # Отримуємо значення phrase_1
-                print(f"Значення phrase_1: {phrase_value}")
-
-        else:
-            translating_msg = await bot.send_message(chat_id=chat_id, text="🧠 Traslating...")
-            print(f"Зберігаємо переклад службових реплік")
-            print("❌ Або користувача немає, або поле language порожнє")
-            #await bot.send_message(chat_id=chat_id, text=f"✅ Switching to your language of communication.")
-                
-
-                    
-            # Отримуємо мову користувача з бази
-            row = await conn.fetchrow("SELECT language FROM users WHERE id = $1", db_user_id)
-            language = row["language"] if row else "eng"
-            
-            # Набір англійських фраз
-            phrases = (
-                "Please enter your name.", # - phrase_1 (
-                "Name saved.", # - phrase_2
-                "Invalid input", # - phrase_3
-                "Which country are you from?", # - phrase_4
-                "Country name saved.", # - phrase_5
-                "Would you like me to automatically generate the characteristics of your conversation partner?", # - phrase_6
-                "Please describe your conversation partner.", # - phrase_7
-                "Conversation partner's profile generated.", # - phrase_8
-                "Let's chat!", # - phrase_9
-                "Initializing the characteristics of your conversation partner...", # - phrase_10
-                "The profile of your conversation partner already exists. Let's continue the dialogue.", # - phrase_11
-                "Your dialogue has come to an end. We will now conduct a detailed analysis and summarize the results.", # - phrase_12
-                "\n\nThank you for the conversation. \nYou will automatically be offered to generate a new respondent profile and start a new dialogue.", # - phrase_13
-                "Conversation partner's profile generated.", # - phrase_14
-                "Conversation partner's profile generated." # - phrase_15
-            )
-            
-                            
-            # Формуємо промпт
-            prompt = (
-                f"Translate the following English phrases into {language}. "
-                "Return only the translations, one per line, in the same order. "
-                "Do not include the original English text, any explanations, or formatting.\n\n" +
-                "\n".join(phrases)
-            )
-            
-            # Повідомлення для OpenAI
-            messages = [
-                {"role": "system", "content": "You are a translation engine. Respond with only the translated phrases, no explanations, no original text, and no formatting."},
-                {"role": "user", "content": prompt}
-            ]
-    
-    
-            # Відправляємо запит
-            response_text = await query_openai_chat(messages)
-    
-            print(f"Text_from_GPT : {response_text}")
-            
-            # Розбираємо результат у кортеж
-            translated_phrases = tuple(
-                line.strip()
-                for line in response_text.strip().split("\n")
-                if line.strip()  # відкидаємо пусті рядки
-            )
-    
-            print(f"translated_phrases : {translated_phrases}")
-    
-    
-            # Заповнюємо до 15 елементів None, якщо менше
-            translated_phrases = list(translated_phrases)
-            while len(translated_phrases) < 15:
-                translated_phrases.append(None)
-    
-    
-            
-            # Внесення у таблицю translated_phrases (решта фраз — NULL)
-            await conn.execute("""
-                INSERT INTO translated_phrases (
-                    user_id,
-                    phrase_1, phrase_2, phrase_3, phrase_4, phrase_5,
-                    phrase_6, phrase_7, phrase_8, phrase_9, phrase_10,
-                    phrase_11, phrase_12, phrase_13, phrase_14, phrase_15
-                ) VALUES (
-                    $1, $2, $3, $4, $5,
-                    $6, $7, $8, $9, $10,
-                    $11, $12, $13, $14, $15, $16
-                )
-                ON CONFLICT (user_id) DO UPDATE SET
-                phrase_1 = EXCLUDED.phrase_1,
-                phrase_2 = EXCLUDED.phrase_2,
-                phrase_3 = EXCLUDED.phrase_3,
-                phrase_4 = EXCLUDED.phrase_4,
-                phrase_5 = EXCLUDED.phrase_5,
-                phrase_6 = EXCLUDED.phrase_6,
-                phrase_7 = EXCLUDED.phrase_7,
-                phrase_8 = EXCLUDED.phrase_8,
-                phrase_9 = EXCLUDED.phrase_9,
-                phrase_10 = EXCLUDED.phrase_10,
-                phrase_11 = EXCLUDED.phrase_11,
-                phrase_12 = EXCLUDED.phrase_12,
-                phrase_13 = EXCLUDED.phrase_13,
-                phrase_14 = EXCLUDED.phrase_14,
-                phrase_15 = EXCLUDED.phrase_15
-            """, db_user_id, *translated_phrases[:15])
-            
-            await translating_msg.delete()
-
-        
-    
-
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         #/////////////////////////////////////// ТЕСТ комірки ДЕ ВКАЗАНО ІМЯ ////////////////////////////////////////////////
         print("ТЕСТ команди - name")
