@@ -2,47 +2,48 @@ from fastapi import FastAPI, Request
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
 import os
 import asyncio
-import json
 
 app = FastAPI()
 
-# 🔐 Токен бота
-BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
-bot = Bot(token=BOT_TOKEN)
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # Токен бота в змінній середовища
+bot = Bot(token=TOKEN)
 
-# 🔁 Обробка запитів від Telegram (вебхук)
-@app.post("/")
+# Клавіатура з двома кнопками
+keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="3 + 6", callback_data="calc_3_plus_6")],
+    [InlineKeyboardButton(text="151 - 131", callback_data="calc_151_minus_131")]
+])
+
+@app.post("/webhook")
 async def telegram_webhook(request: Request):
-    body = await request.body()
-    update = Update.de_json(json.loads(body), bot)
+    data = await request.json()
+    update = Update.de_json(data, bot)
 
-    # Обробка callback-кнопок
-    if update.callback_query:
-        data = update.callback_query.data
-        query = update.callback_query
-
-        if data == "3+6":
-            await bot.answer_callback_query(callback_query_id=query.id, text="9")
-        elif data == "151-131":
-            await bot.answer_callback_query(callback_query_id=query.id, text="20")
-        return {"ok": True}
-
-    # Обробка текстових повідомлень
     if update.message:
-        chat_id = update.message.chat_id
-        text = update.message.text.lower()
+        # Обробка текстового повідомлення
+        chat_id = update.message.chat.id
 
-        if "математик" in text:
-            # Відповідь і кнопки
-            keyboard = [
-                [InlineKeyboardButton("3 + 6", callback_data="3+6")],
-                [InlineKeyboardButton("151 - 131", callback_data="151-131")]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
+        await bot.send_message(
+            chat_id=chat_id,
+            text="я математик",
+            reply_markup=keyboard
+        )
+    elif update.callback_query:
+        # Обробка натискання кнопки
+        callback = update.callback_query
+        chat_id = callback.message.chat.id
+        data = callback.data
 
-            await bot.send_message(chat_id=chat_id, text="Я математик 🧠. Обери приклад:", reply_markup=reply_markup)
+        if data == "calc_3_plus_6":
+            text = "9"
+        elif data == "calc_151_minus_131":
+            text = "20"
         else:
-            await bot.send_message(chat_id=chat_id, text="Напиши слово 'математик', щоб отримати приклади.")
+            text = "Невідома дія"
+
+        # Обов’язково відповідаємо на callback, щоб не було "зависання" кнопки в Telegram
+        await bot.answer_callback_query(callback.id)
+        await bot.send_message(chat_id=chat_id, text=text)
 
     return {"ok": True}
 
