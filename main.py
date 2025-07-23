@@ -28,6 +28,14 @@ openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 #redis_client = None
 ADMIN_IDS = [231319580]  # заміни на свій Telegram ID
 
+
+
+
+keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="generate automatically", callback_data="I get")],
+    [InlineKeyboardButton(text="add your own preferences", callback_data="As you wish")]
+])
+
 #=================================================== ДЕКЛАРАЦІЯ АДМІНСЬКОЇ ФУНКЦІЇ "Отримання балансу" 0
 def get_balance():
     # Повертає значення з бази, API чи де в тебе зберігається баланс
@@ -473,7 +481,8 @@ async def telegram_webhook(request: Request):
             await bot.send_message(
                 chat_id=chat_id,
                 text="🔥 "+translated,
-                parse_mode="Markdown"
+                parse_mode="Markdown",
+                reply_markup=keyboard
             )
             #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_6", "🔥 ")
             return {"status": "commad_new"}
@@ -527,7 +536,8 @@ async def telegram_webhook(request: Request):
             await bot.send_message(
                 chat_id=chat_id,
                 text="🔥 "+translated,
-                parse_mode="Markdown"
+                parse_mode="Markdown",
+                reply_markup=keyboard
             )
             #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_6", "🔥 ")
             return {"status": "commad_new"}
