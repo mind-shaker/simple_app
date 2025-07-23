@@ -7,8 +7,8 @@ import json
 app = FastAPI()
 
 # 🔐 Токен бота
-BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
-bot = Bot(token=BOT_TOKEN)
+TOKEN = os.getenv("TELEGRAM_TOKEN")
+bot = Bot(token=TOKEN)
 
 # 🔁 Обробка запитів від Telegram (вебхук)
 @app.post("/")
