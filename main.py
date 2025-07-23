@@ -1075,9 +1075,15 @@ async def telegram_webhook(request: Request):
                 ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
             """, db_user_id, "country")
 
+            translated = await translate_phrase(conn, db_user_id, "Which country are you from?")
+            await bot.send_message(
+                chat_id=chat_id,
+                text="🔥 "+ translated,
+                parse_mode="Markdown"
+            )
 
 
-            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_4", "🔥 ")
+            #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_4", "🔥 ")
             return {"status": "waiting_country"}
 
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1096,9 +1102,14 @@ async def telegram_webhook(request: Request):
                 ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
             """, db_user_id, "new_dialogue")
 
+            translated = await translate_phrase(conn, db_user_id, "Would you like me to automatically generate the characteristics of your conversation partner?")
+            await bot.send_message(
+                chat_id=chat_id,
+                text="🔥 "+ translated,
+                parse_mode="Markdown"
+            )
 
-
-            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_6", "🔥 ")
+            #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_6", "🔥 ")
             await conn.execute(
                 "UPDATE users SET initial = $1 WHERE id = $2",
                 'pss', db_user_id
@@ -1110,7 +1121,13 @@ async def telegram_webhook(request: Request):
         #///////////////////////////////// ПИТАННЯ чи ОСТАННЯ ДІЯ БУЛА ОБРОБНИКОМ таблиці users /////////////////////////////
         print("ТЕСТ mark")
         if mark == 1:
-            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_9", "🔥 ")
+            translated = await translate_phrase(conn, db_user_id, "Let's chat!")
+            await bot.send_message(
+                chat_id=chat_id,
+                text="🔥 "+ translated,
+                parse_mode="Markdown"
+            )
+            #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_9", "🔥 ")
             return {"status": "data_updated"}
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
