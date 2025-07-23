@@ -357,12 +357,11 @@ async def telegram_webhook(request: Request):
 
 
             
-            ---------
-            ....................................................................................................."""
+            """
             translated = await translate_phrase(conn, db_user_id, text_to_translate)
             await bot.send_message(
                 chat_id=chat_id,
-                text=translated,
+                text=translated +"\n\n\n\n---------",
                 parse_mode="Markdown"
             )
     
