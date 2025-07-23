@@ -5,7 +5,7 @@ import asyncio
 
 app = FastAPI()
 
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # Токен бота в змінній середовища
+TOKEN = os.getenv("TELEGRAM_TOKEN")  # Токен бота в змінній середовища
 bot = Bot(token=TOKEN)
 
 # Клавіатура з двома кнопками
