@@ -10,7 +10,7 @@ print(f"Starting bot with token: {TOKEN}")  # Відлагоджувальне �
 
 bot = Bot(token=TOKEN)
 
-@app.post("/")
+@app.post("/webhook")
 async def telegram_webhook(request: Request):
     body = await request.body()
     print(f"Received raw body: {body.decode('utf-8')}")  # Виводимо вміст запиту
