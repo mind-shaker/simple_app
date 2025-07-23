@@ -52,6 +52,30 @@ async def send_phrase(conn, bot, chat_id, db_user_id, phrase_column: str, prefix
         print(f"❌ Error fetching {phrase_column}: {e}")
 
 
+#=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Переклад поточної фрази на мову користувача" 0
+async def translate_phrase(conn, ai_chat, user_id, original_phrase: str) -> str:
+    # Отримуємо код мови користувача з БД
+    row = await conn.fetchrow("SELECT language FROM users WHERE id = $1", user_id)
+    target_language = row["language"] if row else "eng"
+
+    # Формуємо запит до AI для перекладу
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                f"Translate the following phrase from English into the language specified by the ISO 639-2 code: {target_language}.\n"
+                f"Phrase: {original_phrase}\n"
+                f"Return only the translated phrase as plain text, without quotes or any extra formatting."
+            )
+        }
+    ]
+
+    # Отримуємо відповідь від AI
+    translated_phrase = await ai_chat(messages)
+    return translated_phrase.strip()
+
+
+
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Збільшення лічильника повідомлень" 0
 async def increment_message_count(conn, db_user_id):
     # Знаходимо ID останнього діалогу користувача
@@ -1026,9 +1050,14 @@ async def telegram_webhook(request: Request):
                 ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
             """, db_user_id, "name")
 
+            translated = await translate_phrase(conn, query_openai_chat, some_user_id, "Please enter your name.")
+            await bot.send_message(
+                chat_id=chat_id,
+                text="🔥 "+translated,
+                parse_mode="Markdown"
+            )
 
-
-            await send_phrase(conn, bot, chat_id, db_user_id, "phrase_1", "🔥 ")
+            #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_1", "🔥 ")
             return {"status": "waiting_name"}
 
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
