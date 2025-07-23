@@ -53,7 +53,7 @@ async def send_phrase(conn, bot, chat_id, db_user_id, phrase_column: str, prefix
 
 
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Переклад поточної фрази на мову користувача" 0
-async def translate_phrase(conn, ai_chat, user_id, original_phrase: str) -> str:
+async def translate_phrase(conn, user_id, original_phrase: str) -> str:
     # Отримуємо код мови користувача з БД
     row = await conn.fetchrow("SELECT language FROM users WHERE id = $1", user_id)
     target_language = row["language"] if row else "eng"
@@ -71,7 +71,7 @@ async def translate_phrase(conn, ai_chat, user_id, original_phrase: str) -> str:
     ]
 
     # Отримуємо відповідь від AI
-    translated_phrase = await ai_chat(messages)
+    translated_phrase = await query_openai_chat(messages)
     return translated_phrase.strip()
 
 
@@ -1050,7 +1050,7 @@ async def telegram_webhook(request: Request):
                 ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
             """, db_user_id, "name")
 
-            translated = await translate_phrase(conn, query_openai_chat, some_user_id, "Please enter your name.")
+            translated = await translate_phrase(conn, db_user_id, "Please enter your name.")
             await bot.send_message(
                 chat_id=chat_id,
                 text="🔥 "+translated,
