@@ -1,14 +1,12 @@
 from fastapi import FastAPI, Request
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
 import os
-import asyncio
 
 app = FastAPI()
 
-TOKEN = os.getenv("TELEGRAM_TOKEN")  # Токен бота в змінній середовища
+TOKEN = os.getenv("TELEGRAM_TOKEN")
 bot = Bot(token=TOKEN)
 
-# Клавіатура з двома кнопками
 keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="3 + 6", callback_data="calc_3_plus_6")],
     [InlineKeyboardButton(text="151 - 131", callback_data="calc_151_minus_131")]
@@ -20,7 +18,6 @@ async def telegram_webhook(request: Request):
     update = Update.de_json(data, bot)
 
     if update.message:
-        # Обробка текстового повідомлення
         chat_id = update.message.chat.id
 
         await bot.send_message(
@@ -28,8 +25,8 @@ async def telegram_webhook(request: Request):
             text="я математик",
             reply_markup=keyboard
         )
+
     elif update.callback_query:
-        # Обробка натискання кнопки
         callback = update.callback_query
         chat_id = callback.message.chat.id
         data = callback.data
@@ -41,10 +38,16 @@ async def telegram_webhook(request: Request):
         else:
             text = "Невідома дія"
 
-        # Обов’язково відповідаємо на callback, щоб не було "зависання" кнопки в Telegram
         await bot.answer_callback_query(callback.id)
+
+        # Відправляємо відповідь
         await bot.send_message(chat_id=chat_id, text=text)
 
+        # Приховуємо кнопки, видаляємо клавіатуру
+        await bot.edit_message_reply_markup(
+            chat_id=chat_id,
+            message_id=callback.message.message_id,
+            reply_markup=None
+        )
+
     return {"ok": True}
-
-
