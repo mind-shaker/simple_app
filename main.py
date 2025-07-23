@@ -1062,7 +1062,8 @@ async def telegram_webhook(request: Request):
             await bot.send_message(
                 chat_id=chat_id,
                 text="🔥 "+ translated,
-                parse_mode="Markdown"
+                parse_mode="Markdown",
+                reply_markup=keyboard
             )
 
             #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_6", "🔥 ")
