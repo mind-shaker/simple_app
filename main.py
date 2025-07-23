@@ -2,7 +2,7 @@
 
 #==================================================== Імпорти та ініціалізація
 from fastapi import FastAPI, Request
-from telegram import Bot
+from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
 import os
 import asyncpg
 import redis.asyncio as redis
