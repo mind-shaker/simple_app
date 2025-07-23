@@ -272,6 +272,7 @@ async def telegram_webhook(request: Request):
         #////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО МОВУ СПІЛКУВАННЯ ////////////////////////////////////
         print("ОБРОБНИК команди - language")
         if command_value == 'language':
+            translating_msg = await bot.send_message(chat_id=chat_id, text="🧠 Traslating...")
             print(f"in body language")
 
 
@@ -309,7 +310,7 @@ async def telegram_webhook(request: Request):
                 pass
 
 
-
+            await translating_msg.delete()
             mark = 1
 
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
