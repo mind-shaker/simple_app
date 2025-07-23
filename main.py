@@ -272,7 +272,7 @@ async def telegram_webhook(request: Request):
         print("ОБРОБНИК команди - language")
         if command_value == 'language':
             print(f"in body language")
-            translating_msg = await bot.send_message(chat_id=chat_id, text="🧠 Traslating...")
+
 
             messages = [
                 {"role": "system", "content": "You are a language conversion service."},
@@ -307,7 +307,7 @@ async def telegram_webhook(request: Request):
                 #await bot.send_message(chat_id=chat_id, text=f"❌ Invalid language receive")
                 pass
 
-            await translating_msg.delete()
+
 
             mark = 1
 
@@ -907,6 +907,7 @@ async def telegram_webhook(request: Request):
                 print(f"Значення phrase_1: {phrase_value}")
 
         else:
+            translating_msg = await bot.send_message(chat_id=chat_id, text="🧠 Traslating...")
             print(f"Зберігаємо переклад службових реплік")
             print("❌ Або користувача немає, або поле language порожнє")
             #await bot.send_message(chat_id=chat_id, text=f"✅ Switching to your language of communication.")
@@ -1003,6 +1004,10 @@ async def telegram_webhook(request: Request):
                 phrase_14 = EXCLUDED.phrase_14,
                 phrase_15 = EXCLUDED.phrase_15
             """, db_user_id, *translated_phrases[:15])
+            
+            await translating_msg.delete()
+
+        
     
 
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
