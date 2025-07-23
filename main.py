@@ -230,20 +230,7 @@ async def telegram_webhook(request: Request):
                     "INSERT INTO users (telegram_id, username, full_name) VALUES ($1, $2, $3)",
                     user_id, username, full_name
                 )
-                await bot.send_message(
-                    chat_id=chat_id,
-                    text=(
-                        "🎉 *Congratulations!* You’ve successfully registered.\n\n"
-                        "This is a training chat where the AI will play the role of a *seeker* — someone searching for God.\n"
-                        "Your goal is to guide the seeker to a church or a home group.\n\n"
-                        "⏱ You’ll have *5 hours* and *50 messages* to do it.\n"
-                        "At the end, the AI will summarize the conversation and give you feedback on what could be improved next time.\n\n"
-                        "📈 As your communication skills improve, the AI will make the seeker’s character more challenging.\n\n"
-                        "*Good luck!* 💪\n\n"
-                        "---------"
-                    ),
-                    parse_mode="Markdown"
-                )
+
                 mark = 1
         else:
             print("⚠️ Неможливо вставити користувача: user_id = None")
@@ -352,6 +339,23 @@ async def telegram_webhook(request: Request):
         print("ОБРОБНИК команди - country")
         if command_value == 'country':
             print(f"in body country: {user_text}")
+            text_to_translate = (
+                "🎉 *Congratulations!* You’ve successfully registered.\n\n"
+                "This is a training chat where the AI will play the role of a *seeker* — someone searching for God.\n"
+                "Your goal is to guide the seeker to a church or a home group.\n\n"
+                "⏱ You’ll have *5 hours* and *50 messages* to do it.\n"
+                "At the end, the AI will summarize the conversation and give you feedback on what could be improved next time.\n\n"
+                "📈 As your communication skills improve, the AI will make the seeker’s character more challenging.\n\n"
+                "*Good luck!* 💪\n\n"
+                "---------"
+            )
+            translated = await translate_phrase(conn, db_user_id, text_to_translate)
+            await bot.send_message(
+                chat_id=chat_id,
+                text=translated,
+                parse_mode="Markdown"
+            )
+    
             
             messages = [
                 {"role": "system", "content": "You are a country code conversion service."},
