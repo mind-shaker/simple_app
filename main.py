@@ -272,6 +272,7 @@ async def telegram_webhook(request: Request):
         print("ОБРОБНИК команди - language")
         if command_value == 'language':
             print(f"in body language")
+            translating_msg = await bot.send_message(chat_id=chat_id, text="🧠 Traslating...")
 
             messages = [
                 {"role": "system", "content": "You are a language conversion service."},
@@ -305,6 +306,8 @@ async def telegram_webhook(request: Request):
             else:
                 #await bot.send_message(chat_id=chat_id, text=f"❌ Invalid language receive")
                 pass
+
+            await translating_msg.delete()
 
             mark = 1
 
