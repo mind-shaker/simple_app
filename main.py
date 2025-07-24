@@ -1,4 +1,4 @@
-
+    
 
 #==================================================== Імпорти та ініціалізація
 from fastapi import FastAPI, Request
@@ -546,7 +546,7 @@ async def telegram_webhook(request: Request):
 
         #/////////////////// ОБРОБКА ПОПЕРЕДНЬОГО опитування перед НАЛАШТУВАНЯМ СПІВРОЗМОВНИКА //////////////////////////////
         print("ОБРОБНИК команди - before_dialogue")
-        if command_value == 'before_dialogu':
+        if command_value == 'before_dialogue':
             print(f"in body before_dialogue: {user_text}")
             
             row = await conn.fetchrow("SELECT language FROM users WHERE id = $1", db_user_id)
