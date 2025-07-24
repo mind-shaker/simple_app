@@ -1098,6 +1098,7 @@ async def telegram_webhook(request: Request):
                     chat_id=chat_id,
                     text="🔥 "+translated,
                     parse_mode="Markdown"
+                    reply_markup=keyboard
                 )
             #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                
