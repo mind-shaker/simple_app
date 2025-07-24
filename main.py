@@ -501,7 +501,6 @@ async def telegram_webhook(request: Request):
                         "UPDATE users SET language = $1 WHERE id = $2",
                         language_code, db_user_id
                     )
-                    #await bot.send_message(chat_id=chat_id, text=f"✅ Language saved: {language_code}")
                     
                     await conn.execute(
                         "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
@@ -543,6 +542,12 @@ async def telegram_webhook(request: Request):
             print("ОБРОБНИК команди - country")
             if command_value == 'country':
                 print(f"in body country: {user_text}")
+                translated = await translate_phrase(conn, db_user_id, "Registration of your data is in progress...")
+                reg_process_msg = await bot.send_message(
+                    chat_id=chat_id,
+                    text="🧠 "+ translated,
+                    parse_mode="Markdown"
+                )
                 text_to_translate = """🎉 *Congratulations!* You’ve successfully registered.
     
                 This is a training chat where the AI will play the role of a *seeker* — someone searching for God.
@@ -561,6 +566,8 @@ async def telegram_webhook(request: Request):
     
                 
                 """
+
+                await reg_process_msg.delete()
                 translated = await translate_phrase(conn, db_user_id, text_to_translate)
                 await bot.send_message(
                     chat_id=chat_id,
@@ -938,7 +945,7 @@ async def telegram_webhook(request: Request):
                 text="🧠 "+ translated,
                 parse_mode="Markdown"
             )
-            #thinking_msg = await bot.send_message(chat_id=chat_id, text="🧠 Думаю...")
+
     
     
             msg_count, dialogue_id = await increment_message_count(conn, db_user_id)
