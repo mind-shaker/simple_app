@@ -452,7 +452,7 @@ async def telegram_webhook(request: Request):
                 text="🔥 "+translated,
                 parse_mode="Markdown"
             )
-            #await bot.send_message(chat_id=chat_id, text=" Vy vyjavyly bazannya perervaty potocny dialog stvoryvshy novy")
+
             if message_count >= 30:
                 translated = await translate_phrase(conn, db_user_id, "Your current conversation is quite lengthy. Would you like to summarize it?")
                 await bot.send_message(
@@ -472,9 +472,9 @@ async def telegram_webhook(request: Request):
                 text="✅ "+translated,
                 parse_mode="Markdown"
             )
-            #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_13", "✅ ")
+
             await conn.execute(
-                "UPDATE user_commands SET command = 'new_dialogue' WHERE user_id = $1",
+                "UPDATE user_commands SET command = 'before_dialogue' WHERE user_id = $1",
                 db_user_id
             )
             translated = await translate_phrase(conn, db_user_id, "Would you like me to automatically generate the characteristics of your conversation partner?")
@@ -484,7 +484,7 @@ async def telegram_webhook(request: Request):
                 parse_mode="Markdown",
                 reply_markup=keyboard
             )
-            #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_6", "🔥 ")
+
             return {"status": "commad_new"}
 
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -529,7 +529,7 @@ async def telegram_webhook(request: Request):
             )
             #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_13", "✅ ")
             await conn.execute(
-                "UPDATE user_commands SET command = 'new_dialogue' WHERE user_id = $1",
+                "UPDATE user_commands SET command = 'before_dialogue' WHERE user_id = $1",
                 db_user_id
             )
             translated = await translate_phrase(conn, db_user_id, "Would you like me to automatically generate the characteristics of your conversation partner?")
@@ -1236,33 +1236,30 @@ async def telegram_webhook(request: Request):
             init_msg = await bot.send_message(chat_id=chat_id, text=f"🔔🔔🔔")
             await asyncio.sleep(1)  # Затримка 1 секунду
             await init_msg.delete()
-            translated = await translate_phrase(conn, db_user_id, "Conversation partner's profile generated.")
+            translated = await translate_phrase(conn, db_user_id, "Your dialogue has come to an end. We will now conduct a detailed analysis and summarize the results.")
             init_msg =await bot.send_message(
                 chat_id=chat_id,
                 text="✅ "+translated,
                 parse_mode="Markdown"
             )
-            #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_12", "✅ ")
             await summarize_dialogue(conn, dialogue_id, chat_id, db_user_id)
-            translated = await translate_phrase(conn, db_user_id, "Conversation partner's profile generated.")
+            translated = await translate_phrase(conn, db_user_id, "\n\nThank you for the conversation. \nYou will automatically be offered to generate a new respondent profile and start a new dialogue.")
             init_msg =await bot.send_message(
                 chat_id=chat_id,
                 text="✅ "+translated,
                 parse_mode="Markdown"
             )
-            #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_13", "✅ ")
             await conn.execute(
-                "UPDATE user_commands SET command = 'new_dialogue' WHERE user_id = $1",
+                "UPDATE user_commands SET command = 'before_dialogue' WHERE user_id = $1",
                 db_user_id
             )
 
-            translated = await translate_phrase(conn, db_user_id, "Conversation partner's profile generated.")
+            translated = await translate_phrase(conn, db_user_id, "Would you like me to automatically generate the characteristics of your conversation partner?")
             init_msg =await bot.send_message(
                 chat_id=chat_id,
                 text="🔥 "+translated,
                 parse_mode="Markdown"
             )
-            #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_6", "🔥 ")
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
            
 
