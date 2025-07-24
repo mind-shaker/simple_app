@@ -209,1068 +209,1097 @@ async def startup_event():
 #=================================================== Обробка Telegram webhook
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
-    print(f"отримання запиту з телеграма")
+    print(f"отримано запиту з телеграма")
     data = await request.json()
-    message = data.get("message", {})
-    chat_id = message.get("chat", {}).get("id")
-    user_text = message.get("text", "")
-    from_user = message.get("from", {})
+    # Обробка callback_query (натискання кнопок)
+    if "callback_query" in data:
+        callback = data["callback_query"]
+        callback_data = callback.get("data")
+        chat_id = callback["message"]["chat"]["id"]
+        message_id = callback["message"]["message_id"]
+        user_id = callback["from"]["id"]
 
-    user_id = from_user.get("id")
-    username = from_user.get("username")
-    first_name = from_user.get("first_name", "")
-    last_name = from_user.get("last_name", "")
-    full_name = f"{first_name} {last_name}".strip()
-
-    mark = 0
-    #-------------------------- Робота з базою (вилучено):
-    conn = await get_connection() #++++++++++++++++++++++ ВИКЛИК ФУНКЦІЇ "Отримання з'єднання з PostgreSQL" 0 +++++++++++++++++++
-    try:
-        #///////////////////////////////////////// ТЕСТ НА ПЕРШИЙ ВХІД В БОТА //////////////////////////////////////////////
-        print("ТЕСТ НА ПЕРШИЙ ВХІД В БОТА")
-        # перевірка чи існує в таблиці користувачів поточний користувач user_id в полі таблиці telegram_id. existing_user - це массив значень по користувачу
-        existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
-
-        # процедура створення нового користувача і заповнення полів telegram_id, username, full_name отриманими з телеграму даними user_id, username, full_name
-        if user_id is not None:
-            if not existing_user:
-                await conn.execute(
-                    "INSERT INTO users (telegram_id, username, full_name) VALUES ($1, $2, $3)",
-                    user_id, username, full_name
-                )
-
-                mark = 1
-        else:
-            print("⚠️ Неможливо вставити користувача: user_id = None")
-            return {"status": "skipped_null_user"}
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        db_user_id = existing_user["id"] if existing_user else (await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id))["id"]
-
-
-        command_value = await conn.fetchval(
-            "SELECT command FROM user_commands WHERE user_id = $1",
-            db_user_id
+        print(f"Отримано натискання кнопки: {callback_data}")
+        
+        # Прибрати кнопки
+        await bot.edit_message_reply_markup(
+            chat_id=chat_id,
+            message_id=message_id,
+            reply_markup=None
         )
-        print(f"Current command: {command_value}")
 
+        # Сюди встав свій код, що має обробити callback_data
+        # Наприклад:
+        if callback_data == "I get":
+            # Надсилаємо відповідь або редагуємо повідомлення
+            await bot.send_message(chat_id, "🔄 Генерую автоматично!")
+        elif callback_data == "As you wish":
+            await bot.send_message(chat_id, "✍️ Вкажіть ваші побажання:")
 
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        #//////////////////////////////////////////// ОБРОБКА АДМІНСЬКИХ КОМАНД ////////////////////////////////////////////
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        if user_text == "/status":
-            if user_id not in ADMIN_IDS:
-                await bot.send_message(chat_id=chat_id, text="У вас немає прав.")
-                return {"ok": True}
+        return {"status": "button pressed"}
+
+    # Обробка звичайного текстового повідомлення
+    elif "message" in data:
+        message = data.get("message", {})
+        chat_id = message.get("chat", {}).get("id")
+        user_text = message.get("text", "")
+        from_user = message.get("from", {})
     
-            mem_used = 252451
-            bal = get_balance()
-            await bot.send_message(chat_id=chat_id,
-                                   text=f"Використано памʼяті: {mem_used} MB\nБаланс: {bal} грн")
+        user_id = from_user.get("id")
+        username = from_user.get("username")
+        first_name = from_user.get("first_name", "")
+        last_name = from_user.get("last_name", "")
+        full_name = f"{first_name} {last_name}".strip()
     
-            return {"ok": True}
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        if user_text == "/whoami":
-            await bot.send_message(chat_id=chat_id, text=f"Ваш Telegram ID: {user_id}")
-            return {"ok": True}
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        
-        #////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО МОВУ СПІЛКУВАННЯ ////////////////////////////////////
-        print("ОБРОБНИК команди - language")
-        if command_value == 'language':
-            translating_msg = await bot.send_message(chat_id=chat_id, text="🧠 Traslating...")
-            print(f"in body language")
-
-
-            messages = [
-                {"role": "system", "content": "You are a language conversion service."},
-                {
-                    "role": "user",
-                    "content": f'Provide the ISO 639-2 three-letter code for this language: "{user_text}". Return only the code, without additional words.'
-                }
-            ]
-        
-            # Get response from OpenAI in English
-            language_code = await query_openai_chat(messages)
-
-            print(f"language_code: {language_code}")                                        
-            language_code = language_code.strip().lower()
-        
-            # Validate the code
-            if len(language_code) == 3 and language_code.isalpha() and language_code != 'sms' and language_code != 'xxx':
-                # Save to DB
-                await conn.execute(
-                    "UPDATE users SET language = $1 WHERE id = $2",
-                    language_code, db_user_id
-                )
-                #await bot.send_message(chat_id=chat_id, text=f"✅ Language saved: {language_code}")
-                
-                await conn.execute(
-                    "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
-                    db_user_id
-                )
-
-                
+        mark = 0
+        #-------------------------- Робота з базою (вилучено):
+        conn = await get_connection() #++++++++++++++++++++++ ВИКЛИК ФУНКЦІЇ "Отримання з'єднання з PostgreSQL" 0 +++++++++++++++++++
+        try:
+            #///////////////////////////////////////// ТЕСТ НА ПЕРШИЙ ВХІД В БОТА //////////////////////////////////////////////
+            print("ТЕСТ НА ПЕРШИЙ ВХІД В БОТА")
+            # перевірка чи існує в таблиці користувачів поточний користувач user_id в полі таблиці telegram_id. existing_user - це массив значень по користувачу
+            existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
+    
+            # процедура створення нового користувача і заповнення полів telegram_id, username, full_name отриманими з телеграму даними user_id, username, full_name
+            if user_id is not None:
+                if not existing_user:
+                    await conn.execute(
+                        "INSERT INTO users (telegram_id, username, full_name) VALUES ($1, $2, $3)",
+                        user_id, username, full_name
+                    )
+    
+                    mark = 1
             else:
-                #await bot.send_message(chat_id=chat_id, text=f"❌ Invalid language receive")
-                pass
-
-
-            await translating_msg.delete()
-            mark = 1
-
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        #//////////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО ІМЯ /////////////////////////////////////////// 
-        print("ОБРОБНИК команди - name")
-        if command_value == 'name':
-            print(f"in body name: {user_text}")
-            await conn.execute(
-                "UPDATE users SET name = $1 WHERE id = $2",
-                user_text, db_user_id
-            )
-
-            #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_2", "✅ ")
-
-        
-            await conn.execute(
-                "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
+                print("⚠️ Неможливо вставити користувача: user_id = None")
+                return {"status": "skipped_null_user"}
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+            db_user_id = existing_user["id"] if existing_user else (await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id))["id"]
+    
+    
+            command_value = await conn.fetchval(
+                "SELECT command FROM user_commands WHERE user_id = $1",
                 db_user_id
             )
-            mark = 1
-        
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-        #//////////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО КРАЇНУ ///////////////////////////////////////////
-        print("ОБРОБНИК команди - country")
-        if command_value == 'country':
-            print(f"in body country: {user_text}")
-            text_to_translate = """🎉 *Congratulations!* You’ve successfully registered.
-
-            This is a training chat where the AI will play the role of a *seeker* — someone searching for God.
-            Your goal is to guide the seeker to a church or a home group.
-            
-            ⏱ You’ll have *5 hours* and *50 messages* to do it.
-            At the end, the AI will summarize the conversation and give you feedback on what could be improved next time.
-            
-            📈 As your communication skills improve, the AI will make the seeker’s character more challenging.
-            
-            *Good luck!* 💪
-
-
-
-
-
-            
-            """
-            translated = await translate_phrase(conn, db_user_id, text_to_translate)
-            await bot.send_message(
-                chat_id=chat_id,
-                text=translated +"\n\n\n\n---------",
-                parse_mode="Markdown"
-            )
+            print(f"Current command: {command_value}")
     
+    
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            #//////////////////////////////////////////// ОБРОБКА АДМІНСЬКИХ КОМАНД ////////////////////////////////////////////
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            if user_text == "/status":
+                if user_id not in ADMIN_IDS:
+                    await bot.send_message(chat_id=chat_id, text="У вас немає прав.")
+                    return {"ok": True}
+        
+                mem_used = 252451
+                bal = get_balance()
+                await bot.send_message(chat_id=chat_id,
+                                       text=f"Використано памʼяті: {mem_used} MB\nБаланс: {bal} грн")
+        
+                return {"ok": True}
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             
-            messages = [
-                {"role": "system", "content": "You are a country code conversion service."},
-                {
-                    "role": "user",
-                    "content": f'Provide the ISO 3166-1 alpha-3 code for this country: "{user_text}". Return only the code, in uppercase, without additional text.'
-                }
-            ]
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            if user_text == "/whoami":
+                await bot.send_message(chat_id=chat_id, text=f"Ваш Telegram ID: {user_id}")
+                return {"ok": True}
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             
-            # Отримуємо код країни
-            country_code = await query_openai_chat(messages)
+            #////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО МОВУ СПІЛКУВАННЯ ////////////////////////////////////
+            print("ОБРОБНИК команди - language")
+            if command_value == 'language':
+                translating_msg = await bot.send_message(chat_id=chat_id, text="🧠 Traslating...")
+                print(f"in body language")
+    
+    
+                messages = [
+                    {"role": "system", "content": "You are a language conversion service."},
+                    {
+                        "role": "user",
+                        "content": f'Provide the ISO 639-2 three-letter code for this language: "{user_text}". Return only the code, without additional words.'
+                    }
+                ]
             
-            print(f"country_code: {country_code}")
-            country_code = country_code.strip().upper()
+                # Get response from OpenAI in English
+                language_code = await query_openai_chat(messages)
+    
+                print(f"language_code: {language_code}")                                        
+                language_code = language_code.strip().lower()
             
-            # Перевіряємо, що це дійсний код
-            if len(country_code) == 3 and country_code.isalpha():
+                # Validate the code
+                if len(language_code) == 3 and language_code.isalpha() and language_code != 'sms' and language_code != 'xxx':
+                    # Save to DB
+                    await conn.execute(
+                        "UPDATE users SET language = $1 WHERE id = $2",
+                        language_code, db_user_id
+                    )
+                    #await bot.send_message(chat_id=chat_id, text=f"✅ Language saved: {language_code}")
+                    
+                    await conn.execute(
+                        "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
+                        db_user_id
+                    )
+    
+                    
+                else:
+                    #await bot.send_message(chat_id=chat_id, text=f"❌ Invalid language receive")
+                    pass
+    
+    
+                await translating_msg.delete()
+                mark = 1
+    
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+            #//////////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО ІМЯ /////////////////////////////////////////// 
+            print("ОБРОБНИК команди - name")
+            if command_value == 'name':
+                print(f"in body name: {user_text}")
                 await conn.execute(
-                    "UPDATE users SET country = $1 WHERE id = $2",
-                    country_code, db_user_id
+                    "UPDATE users SET name = $1 WHERE id = $2",
+                    user_text, db_user_id
                 )
     
-                #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_5", "✅ ")
+                #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_2", "✅ ")
+    
+            
                 await conn.execute(
                     "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
                     db_user_id
                 )
-            else:
-                translated = await translate_phrase(conn, db_user_id, "Invalid input")
+                mark = 1
+            
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
+            #//////////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО КРАЇНУ ///////////////////////////////////////////
+            print("ОБРОБНИК команди - country")
+            if command_value == 'country':
+                print(f"in body country: {user_text}")
+                text_to_translate = """🎉 *Congratulations!* You’ve successfully registered.
+    
+                This is a training chat where the AI will play the role of a *seeker* — someone searching for God.
+                Your goal is to guide the seeker to a church or a home group.
+                
+                ⏱ You’ll have *5 hours* and *50 messages* to do it.
+                At the end, the AI will summarize the conversation and give you feedback on what could be improved next time.
+                
+                📈 As your communication skills improve, the AI will make the seeker’s character more challenging.
+                
+                *Good luck!* 💪
+    
+    
+    
+    
+    
+                
+                """
+                translated = await translate_phrase(conn, db_user_id, text_to_translate)
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text=translated +"\n\n\n\n---------",
+                    parse_mode="Markdown"
+                )
+        
+                
+                messages = [
+                    {"role": "system", "content": "You are a country code conversion service."},
+                    {
+                        "role": "user",
+                        "content": f'Provide the ISO 3166-1 alpha-3 code for this country: "{user_text}". Return only the code, in uppercase, without additional text.'
+                    }
+                ]
+                
+                # Отримуємо код країни
+                country_code = await query_openai_chat(messages)
+                
+                print(f"country_code: {country_code}")
+                country_code = country_code.strip().upper()
+                
+                # Перевіряємо, що це дійсний код
+                if len(country_code) == 3 and country_code.isalpha():
+                    await conn.execute(
+                        "UPDATE users SET country = $1 WHERE id = $2",
+                        country_code, db_user_id
+                    )
+        
+                    #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_5", "✅ ")
+                    await conn.execute(
+                        "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
+                        db_user_id
+                    )
+                else:
+                    translated = await translate_phrase(conn, db_user_id, "Invalid input")
+                    await bot.send_message(
+                        chat_id=chat_id,
+                        text="✅ "+translated,
+                        parse_mode="Markdown"
+                    )
+                    #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_3", "✅ ")
+    
+                mark = 1
+    
+                
+    
+    
+            
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                    
+            
+            
+            #/////////////////////////////////// ОБРОБКА ПЕРЕРИВАННЯ ПОТОЧНОГО ДІАЛОГУ //////////////////////////////////////////
+            print("ОБРОБНИК команди - /new")
+            if user_text == "/new":
+                # Знаходимо ID останнього діалогу користувача
+                row_id = await conn.fetchrow("""
+                    SELECT id FROM dialogues_stat
+                    WHERE user_id = $1
+                    ORDER BY started_at DESC
+                    LIMIT 1
+                """, db_user_id)
+            
+                if not row_id:
+                    print("❌ No dialogue found for this user.")
+                    return None
+            
+                dialogue_id = row_id["id"]
+    
+                row = await conn.fetchrow(
+                    "SELECT message_count FROM dialogues_stat WHERE id = $1",
+                    dialogue_id
+                )
+                if row:
+                    message_count = row["message_count"]
+                    print(f"📨 message_count for dialogue {dialogue_id}: {message_count}")
+                else:
+                    print(f"❌ Dialogue with id {dialogue_id} not found.")
+                    return None
+                translated = await translate_phrase(conn, db_user_id, "You have interrupted the current conversation.")
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text="🔥 "+translated,
+                    parse_mode="Markdown"
+                )
+    
+                if message_count >= 30:
+                    translated = await translate_phrase(conn, db_user_id, "Your current conversation is quite lengthy. Would you like to summarize it?")
+                    await bot.send_message(
+                        chat_id=chat_id,
+                        text="🔥 "+ translated,
+                        parse_mode="Markdown"
+                    )
+                    #await bot.send_message(chat_id=chat_id, text="👋 U vas dostatno povidomlen dlya rezjumuvannya. Bazaete rezyumuvaty potochny dialog?")
+                    await conn.execute(
+                        "UPDATE user_commands SET command = 'continue_new' WHERE user_id = $1",
+                        db_user_id
+                    )
+                    return {"status": "commad_new"}
+                translated = await translate_phrase(conn, db_user_id, "\n\nThank you for the conversation. \nYou will automatically be offered to generate a new respondent profile and start a new dialogue.")
                 await bot.send_message(
                     chat_id=chat_id,
                     text="✅ "+translated,
                     parse_mode="Markdown"
                 )
-                #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_3", "✅ ")
-
-            mark = 1
-
-            
-
-
-        
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                
-        
-        
-        #/////////////////////////////////// ОБРОБКА ПЕРЕРИВАННЯ ПОТОЧНОГО ДІАЛОГУ //////////////////////////////////////////
-        print("ОБРОБНИК команди - /new")
-        if user_text == "/new":
-            # Знаходимо ID останнього діалогу користувача
-            row_id = await conn.fetchrow("""
-                SELECT id FROM dialogues_stat
-                WHERE user_id = $1
-                ORDER BY started_at DESC
-                LIMIT 1
-            """, db_user_id)
-        
-            if not row_id:
-                print("❌ No dialogue found for this user.")
-                return None
-        
-            dialogue_id = row_id["id"]
-
-            row = await conn.fetchrow(
-                "SELECT message_count FROM dialogues_stat WHERE id = $1",
-                dialogue_id
-            )
-            if row:
-                message_count = row["message_count"]
-                print(f"📨 message_count for dialogue {dialogue_id}: {message_count}")
-            else:
-                print(f"❌ Dialogue with id {dialogue_id} not found.")
-                return None
-            translated = await translate_phrase(conn, db_user_id, "You have interrupted the current conversation.")
-            await bot.send_message(
-                chat_id=chat_id,
-                text="🔥 "+translated,
-                parse_mode="Markdown"
-            )
-
-            if message_count >= 30:
-                translated = await translate_phrase(conn, db_user_id, "Your current conversation is quite lengthy. Would you like to summarize it?")
-                await bot.send_message(
-                    chat_id=chat_id,
-                    text="🔥 "+ translated,
-                    parse_mode="Markdown"
-                )
-                #await bot.send_message(chat_id=chat_id, text="👋 U vas dostatno povidomlen dlya rezjumuvannya. Bazaete rezyumuvaty potochny dialog?")
+    
                 await conn.execute(
-                    "UPDATE user_commands SET command = 'continue_new' WHERE user_id = $1",
+                    "UPDATE user_commands SET command = 'before_dialogue' WHERE user_id = $1",
                     db_user_id
                 )
+                translated = await translate_phrase(conn, db_user_id, "Would you like me to automatically generate the characteristics of your conversation partner?")
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text="🔥 "+translated,
+                    parse_mode="Markdown",
+                    reply_markup=keyboard
+                )
+    
                 return {"status": "commad_new"}
-            translated = await translate_phrase(conn, db_user_id, "\n\nThank you for the conversation. \nYou will automatically be offered to generate a new respondent profile and start a new dialogue.")
-            await bot.send_message(
-                chat_id=chat_id,
-                text="✅ "+translated,
-                parse_mode="Markdown"
-            )
-
-            await conn.execute(
-                "UPDATE user_commands SET command = 'before_dialogue' WHERE user_id = $1",
-                db_user_id
-            )
-            translated = await translate_phrase(conn, db_user_id, "Would you like me to automatically generate the characteristics of your conversation partner?")
-            await bot.send_message(
-                chat_id=chat_id,
-                text="🔥 "+translated,
-                parse_mode="Markdown",
-                reply_markup=keyboard
-            )
-
-            return {"status": "commad_new"}
-
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-        #/////////////////////////////////// ПРОДОВЖЕННЯ ОБРОБКИ ПЕРЕРИВАННЯ ДІАЛОГУ //////////////////////////////////////
-        print("ОБРОБНИК команди - continue_new")
-        if command_value == 'continue_new':
-            print(f"in body dialogue: {user_text}")
-            
-            row = await conn.fetchrow("SELECT language FROM users WHERE id = $1", db_user_id)
-            if row:
-                language = row["language"]
-            else:
-                language = 'eng'  # або значення за замовчуванням
-            
-            
-            messages = [
-                {
-                    "role": "user",
-                    "content": (
-                        f"Determine whether the following phrase: {user_text} indicates agreement in the language specified by the ISO 639-2 code: {language}." 
-                        f"Return the English word 'yes' if the phrase indicates agreement, or 'no' if it does not."
-                        f"Return exactly yes or no as plain text, without any quotes or formatting."
+    
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
+    
+    
+            #/////////////////////////////////// ПРОДОВЖЕННЯ ОБРОБКИ ПЕРЕРИВАННЯ ДІАЛОГУ //////////////////////////////////////
+            print("ОБРОБНИК команди - continue_new")
+            if command_value == 'continue_new':
+                print(f"in body dialogue: {user_text}")
+                
+                row = await conn.fetchrow("SELECT language FROM users WHERE id = $1", db_user_id)
+                if row:
+                    language = row["language"]
+                else:
+                    language = 'eng'  # або значення за замовчуванням
+                
+                
+                messages = [
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Determine whether the following phrase: {user_text} indicates agreement in the language specified by the ISO 639-2 code: {language}." 
+                            f"Return the English word 'yes' if the phrase indicates agreement, or 'no' if it does not."
+                            f"Return exactly yes or no as plain text, without any quotes or formatting."
+                        )
+                    }
+                ]
+                user_answer = await query_openai_chat(messages)
+                print(f"user_answer: {user_answer}")
+    
+                if user_answer.lower() in ("yes", "y"):
+                    # rezyumuvannya
+                    print(f"rezyumuvannya -----------------------------------")
+                    await summarize_dialogue(conn, dialogue_id, chat_id, db_user_id)
+                translated = await translate_phrase(conn, db_user_id, "\n\nThank you for the conversation. \nYou will automatically be offered to generate a new respondent profile and start a new dialogue.")
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text="✅ "+translated,
+                    parse_mode="Markdown"
+                )
+                #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_13", "✅ ")
+                await conn.execute(
+                    "UPDATE user_commands SET command = 'before_dialogue' WHERE user_id = $1",
+                    db_user_id
+                )
+                translated = await translate_phrase(conn, db_user_id, "Would you like me to automatically generate the characteristics of your conversation partner?")
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text="🔥 "+translated,
+                    parse_mode="Markdown",
+                    reply_markup=keyboard
+                )
+                #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_6", "🔥 ")
+                return {"status": "commad_new"}
+                
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+            #/////////////////// ОБРОБКА ПОПЕРЕДНЬОГО опитування перед НАЛАШТУВАНЯМ СПІВРОЗМОВНИКА //////////////////////////////
+            print("ОБРОБНИК команди - before_dialogue")
+            if command_value == 'before_dialogue':
+                print(f"in body before_dialogue: {user_text}")
+                
+                row = await conn.fetchrow("SELECT language FROM users WHERE id = $1", db_user_id)
+                if row:
+                    language = row["language"]
+                else:
+                    language = 'eng'  # або значення за замовчуванням
+                
+                
+                messages = [
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Determine whether the following phrase: {user_text} indicates agreement in the language specified by the ISO 639-2 code: {language}." 
+                            f"Return the English word 'yes' if the phrase indicates agreement, or 'no' if it does not."
+                            f"Return exactly yes or no as plain text, without any quotes or formatting."
+                        )
+                    }
+                ]
+                
+                # Отримуємо код країни
+                user_answer = await query_openai_chat(messages)
+                print(f"user_answer: {user_answer}")
+    
+                if user_answer.lower() in ("yes", "y"):
+                    #автоматчичне створення випадкового співрозмовника
+                    await conn.execute("""
+                        INSERT INTO user_commands (user_id, command)
+                        VALUES ($1, $2)
+                        ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
+                    """, db_user_id, "new_dialogue")
+    
+                    command_value = 'new_dialogue'
+    
+                else:
+                    translated = await translate_phrase(conn, db_user_id, "Please describe your conversation partner.")
+                    init_msg =await bot.send_message(
+                        chat_id=chat_id,
+                        text="✅ "+translated,
+                        parse_mode="Markdown"
                     )
-                }
-            ]
-            user_answer = await query_openai_chat(messages)
-            print(f"user_answer: {user_answer}")
-
-            if user_answer.lower() in ("yes", "y"):
-                # rezyumuvannya
-                print(f"rezyumuvannya -----------------------------------")
-                await summarize_dialogue(conn, dialogue_id, chat_id, db_user_id)
-            translated = await translate_phrase(conn, db_user_id, "\n\nThank you for the conversation. \nYou will automatically be offered to generate a new respondent profile and start a new dialogue.")
-            await bot.send_message(
-                chat_id=chat_id,
-                text="✅ "+translated,
-                parse_mode="Markdown"
-            )
-            #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_13", "✅ ")
-            await conn.execute(
-                "UPDATE user_commands SET command = 'before_dialogue' WHERE user_id = $1",
-                db_user_id
-            )
-            translated = await translate_phrase(conn, db_user_id, "Would you like me to automatically generate the characteristics of your conversation partner?")
-            await bot.send_message(
-                chat_id=chat_id,
-                text="🔥 "+translated,
-                parse_mode="Markdown",
-                reply_markup=keyboard
-            )
-            #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_6", "🔥 ")
-            return {"status": "commad_new"}
-            
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        #/////////////////// ОБРОБКА ПОПЕРЕДНЬОГО опитування перед НАЛАШТУВАНЯМ СПІВРОЗМОВНИКА //////////////////////////////
-        print("ОБРОБНИК команди - before_dialogue")
-        if command_value == 'before_dialogue':
-            print(f"in body before_dialogue: {user_text}")
-            
-            row = await conn.fetchrow("SELECT language FROM users WHERE id = $1", db_user_id)
-            if row:
-                language = row["language"]
-            else:
-                language = 'eng'  # або значення за замовчуванням
-            
-            
-            messages = [
-                {
-                    "role": "user",
-                    "content": (
-                        f"Determine whether the following phrase: {user_text} indicates agreement in the language specified by the ISO 639-2 code: {language}." 
-                        f"Return the English word 'yes' if the phrase indicates agreement, or 'no' if it does not."
-                        f"Return exactly yes or no as plain text, without any quotes or formatting."
+                    #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_7", "✅ ")
+                    await conn.execute(
+                        "UPDATE user_commands SET command = 'new_handle_dialogue' WHERE user_id = $1",
+                        db_user_id
                     )
-                }
-            ]
+                    return {"status": "waiting_language"}
+    
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             
-            # Отримуємо код країни
-            user_answer = await query_openai_chat(messages)
-            print(f"user_answer: {user_answer}")
-
-            if user_answer.lower() in ("yes", "y"):
+            #/////////////////////// ОБРОБКА РЕСПОНСУ на питання НАЛАШТУВАНЬ СПІВРОЗМОВНИКА //////////////////////////////////////
+            print("ОБРОБНИК команди - new_dialogue")
+            if command_value == 'new_dialogue':
+                print(f"in body automatic generation profile")
                 #автоматчичне створення випадкового співрозмовника
-                await conn.execute("""
-                    INSERT INTO user_commands (user_id, command)
-                    VALUES ($1, $2)
-                    ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
-                """, db_user_id, "new_dialogue")
-
-                command_value = 'new_dialogue'
-
-            else:
-                translated = await translate_phrase(conn, db_user_id, "Please describe your conversation partner.")
+    
+                translated = await translate_phrase(conn, db_user_id, "Initializing the characteristics of your conversation partner...")
                 init_msg =await bot.send_message(
                     chat_id=chat_id,
                     text="✅ "+translated,
                     parse_mode="Markdown"
                 )
-                #await send_phrase(conn, bot, chat_id, db_user_id, "phrase_7", "✅ ")
-                await conn.execute(
-                    "UPDATE user_commands SET command = 'new_handle_dialogue' WHERE user_id = $1",
+                #init_msg = await send_phrase(conn, bot, chat_id, db_user_id, "phrase_10", "✅ ")
+                profile_reference = {
+                      "name": "Mariam",
+                      "age": 24,
+                      "country": "Egypt",
+                      "difficulty_level": "1–5",
+                      "religious_context": "muslim",
+                      "personality": "Skeptical but emotionally open",
+                      "barriers": ["God and suffering", "trust in religion"],
+                      "openness": "Medium",
+                      "goal": "To see if God is real and personal",
+                      "big_five_traits": {
+                            "openness": "high",
+                            "conscientiousness": "medium",
+                            "extraversion": "low",
+                            "agreeableness": "medium",
+                            "neuroticism": "high"
+                      },
+                      "temperament": "Melancholic",
+                      "worldview_and_values": ["Humanism", "Skepticism"],
+                      "beliefs": ["Religion is man-made", "God may exist but is distant"],
+                      "motivation_and_goals": ["Find meaning after loss", "Reconnect with hope"],
+                      "background": "Grew up in nominal faith, lost friend in accident",
+                      "erikson_stage": "Young adulthood — Intimacy vs. Isolation",
+                      "emotional_intelligence": "Moderate",
+                      "thinking_style": "Analytical with emotional interference",
+                      "biological_factors": ["Sleep-deprived", "Hormonal imbalance"],
+                      "social_context": ["Urban Egyptian culture", "Peers secular"],
+                      "enneagram": "Type 4 — Individualist",
+                      "disc_profile": "C — Conscientious",
+                      "stress_tolerance": "Low",
+                      "self_image": "Feels broken, searching for healing",
+                      "cognitive_biases": ["Confirmation bias", "Negativity bias"],
+                      "attachment_style": "Anxious-preoccupied",
+                      "religion": "Nominal Christian",
+                      "trauma_history": "Friend's death in accident — unresolved",
+                      "stress_level": "High",
+                      "habits": ["Night owl", "Avoids social events"],
+                      "why_contacted_us": "Saw Christian video that made her cry",
+                      "digital_behavior": ["Active on Instagram", "Searches for spiritual content"],
+                      "peer_pressure": ["Friends mock faith"],
+                      "attachment_history": "Emotionally distant parents (based on Bowlby theory)",
+                      "culture": "Middle Eastern / Egyptian",
+                      "neuroprofile": "Sensitive limbic response",
+                      "meta_programs": ["Away-from motivation", "External validation"],
+                      "philosophical_views": ["Existentialism", "Skepticism"]
+                }
+                messages = [
+                    {
+                        "role": "system",
+                        "content": "Ти — помічник, який створює психологічні профілі вигаданих людей."
+                    },
+                    {
+                        "role": "user",
+                        "content": f"""Згенеруй новий профіль, використовуючи структуру та формат як в наданому нижче прикладі профілю, але з новими значеннями, які логічно відповідають полям.
+                
+                Ось приклад профілю:
+                {json.dumps(profile_reference, ensure_ascii=False, indent=2)}
+                
+                У значенні ключа `difficulty_level` в новому згенерованому профілі заміни цифру на характеристику, яка відповідає тій цифрі разом з цифрою з цього списку:
+                  1 — Open, with a mild spiritual inquiry
+                  2 — Doubtful, searching, but with barriers
+                  3 — Emotionally wounded, closed-off, critical
+                  4 — Hostile or apathetic, with negative personal experience
+                  5 — Provocative, aggressive, theologically well-versed
+                
+                Відповідь дай у форматі **JSON**, без жодних пояснень.
+                Без коду markdown, тільки чистий JSON."""
+                    }
+                ]
+    
+                response = await query_openai_chat(messages=messages)
+                
+                # Парсимо json відповідь від чату
+                try:
+                    persona = json.loads(response)
+                except Exception as e:
+                    await bot.send_message(chat_id=chat_id, text=f"❌ Parsing error: {e}")
+                    return {"status": "error_parsing_profile"}
+    
+                # Вставляємо в базу
+                # 1. Створюємо новий діалог і витягуємо його id
+                dialogue_row = await conn.fetchrow(
+                    """
+                    INSERT INTO dialogues_stat (user_id) VALUES ($1)
+                    RETURNING id
+                    """,
                     db_user_id
                 )
-                return {"status": "waiting_language"}
-
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        
-        #/////////////////////// ОБРОБКА РЕСПОНСУ на питання НАЛАШТУВАНЬ СПІВРОЗМОВНИКА //////////////////////////////////////
-        print("ОБРОБНИК команди - new_dialogue")
-        if command_value == 'new_dialogue':
-            print(f"in body automatic generation profile")
-            #автоматчичне створення випадкового співрозмовника
-
-            translated = await translate_phrase(conn, db_user_id, "Initializing the characteristics of your conversation partner...")
-            init_msg =await bot.send_message(
-                chat_id=chat_id,
-                text="✅ "+translated,
-                parse_mode="Markdown"
-            )
-            #init_msg = await send_phrase(conn, bot, chat_id, db_user_id, "phrase_10", "✅ ")
-            profile_reference = {
-                  "name": "Mariam",
-                  "age": 24,
-                  "country": "Egypt",
-                  "difficulty_level": "1–5",
-                  "religious_context": "muslim",
-                  "personality": "Skeptical but emotionally open",
-                  "barriers": ["God and suffering", "trust in religion"],
-                  "openness": "Medium",
-                  "goal": "To see if God is real and personal",
-                  "big_five_traits": {
-                        "openness": "high",
-                        "conscientiousness": "medium",
-                        "extraversion": "low",
-                        "agreeableness": "medium",
-                        "neuroticism": "high"
-                  },
-                  "temperament": "Melancholic",
-                  "worldview_and_values": ["Humanism", "Skepticism"],
-                  "beliefs": ["Religion is man-made", "God may exist but is distant"],
-                  "motivation_and_goals": ["Find meaning after loss", "Reconnect with hope"],
-                  "background": "Grew up in nominal faith, lost friend in accident",
-                  "erikson_stage": "Young adulthood — Intimacy vs. Isolation",
-                  "emotional_intelligence": "Moderate",
-                  "thinking_style": "Analytical with emotional interference",
-                  "biological_factors": ["Sleep-deprived", "Hormonal imbalance"],
-                  "social_context": ["Urban Egyptian culture", "Peers secular"],
-                  "enneagram": "Type 4 — Individualist",
-                  "disc_profile": "C — Conscientious",
-                  "stress_tolerance": "Low",
-                  "self_image": "Feels broken, searching for healing",
-                  "cognitive_biases": ["Confirmation bias", "Negativity bias"],
-                  "attachment_style": "Anxious-preoccupied",
-                  "religion": "Nominal Christian",
-                  "trauma_history": "Friend's death in accident — unresolved",
-                  "stress_level": "High",
-                  "habits": ["Night owl", "Avoids social events"],
-                  "why_contacted_us": "Saw Christian video that made her cry",
-                  "digital_behavior": ["Active on Instagram", "Searches for spiritual content"],
-                  "peer_pressure": ["Friends mock faith"],
-                  "attachment_history": "Emotionally distant parents (based on Bowlby theory)",
-                  "culture": "Middle Eastern / Egyptian",
-                  "neuroprofile": "Sensitive limbic response",
-                  "meta_programs": ["Away-from motivation", "External validation"],
-                  "philosophical_views": ["Existentialism", "Skepticism"]
-            }
-            messages = [
-                {
-                    "role": "system",
-                    "content": "Ти — помічник, який створює психологічні профілі вигаданих людей."
-                },
-                {
-                    "role": "user",
-                    "content": f"""Згенеруй новий профіль, використовуючи структуру та формат як в наданому нижче прикладі профілю, але з новими значеннями, які логічно відповідають полям.
-            
-            Ось приклад профілю:
-            {json.dumps(profile_reference, ensure_ascii=False, indent=2)}
-            
-            У значенні ключа `difficulty_level` в новому згенерованому профілі заміни цифру на характеристику, яка відповідає тій цифрі разом з цифрою з цього списку:
-              1 — Open, with a mild spiritual inquiry
-              2 — Doubtful, searching, but with barriers
-              3 — Emotionally wounded, closed-off, critical
-              4 — Hostile or apathetic, with negative personal experience
-              5 — Provocative, aggressive, theologically well-versed
-            
-            Відповідь дай у форматі **JSON**, без жодних пояснень.
-            Без коду markdown, тільки чистий JSON."""
-                }
-            ]
-
-            response = await query_openai_chat(messages=messages)
-            
-            # Парсимо json відповідь від чату
-            try:
-                persona = json.loads(response)
-            except Exception as e:
-                await bot.send_message(chat_id=chat_id, text=f"❌ Parsing error: {e}")
-                return {"status": "error_parsing_profile"}
-
-            # Вставляємо в базу
-            # 1. Створюємо новий діалог і витягуємо його id
-            dialogue_row = await conn.fetchrow(
-                """
-                INSERT INTO dialogues_stat (user_id) VALUES ($1)
-                RETURNING id
-                """,
-                db_user_id
-            )
-            dialogue_id = dialogue_row["id"]
-            
-            # 2. Вставляємо профіль з id_dialogue
-            await conn.execute(
-                """
-                INSERT INTO simulated_personas (
-                    user_id, name, age, country, difficulty_level, religious_context, personality,
-                    barriers, openness, goal, big_five_traits, temperament, worldview_and_values,
-                    beliefs, motivation_and_goals, background, erikson_stage, emotional_intelligence,
-                    thinking_style, biological_factors, social_context, enneagram, disc_profile,
-                    stress_tolerance, self_image, cognitive_biases, attachment_style, religion,
-                    trauma_history, stress_level, habits, why_contacted_us, digital_behavior,
-                    peer_pressure, attachment_history, culture, neuroprofile, meta_programs, philosophical_views,
-                    id_dialogue
-                ) VALUES (
-                    $1, $2, $3, $4, $5, $6, $7,
-                    $8, $9, $10, $11, $12, $13,
-                    $14, $15, $16, $17, $18,
-                    $19, $20, $21, $22, $23,
-                    $24, $25, $26, $27, $28,
-                    $29, $30, $31, $32, $33,
-                    $34, $35, $36, $37, $38, $39,
-                    $40
-                )
-                """,
-                db_user_id,
-                persona.get("name"),
-                persona.get("age"),
-                persona.get("country"),
-                persona.get("difficulty_level"),
-                persona.get("religious_context"),
-                persona.get("personality"),
-                persona.get("barriers"),
-                persona.get("openness"),
-                persona.get("goal"),
-                json.dumps(persona.get("big_five_traits")),
-                persona.get("temperament"),
-                persona.get("worldview_and_values"),
-                persona.get("beliefs"),
-                persona.get("motivation_and_goals"),
-                persona.get("background"),
-                persona.get("erikson_stage"),
-                persona.get("emotional_intelligence"),
-                persona.get("thinking_style"),
-                persona.get("biological_factors"),
-                persona.get("social_context"),
-                persona.get("enneagram"),
-                persona.get("disc_profile"),
-                persona.get("stress_tolerance"),
-                persona.get("self_image"),
-                persona.get("cognitive_biases"),
-                persona.get("attachment_style"),
-                persona.get("religion"),
-                persona.get("trauma_history"),
-                persona.get("stress_level"),
-                persona.get("habits"),
-                persona.get("why_contacted_us"),
-                persona.get("digital_behavior"),
-                persona.get("peer_pressure"),
-                persona.get("attachment_history"),
-                persona.get("culture"),
-                persona.get("neuroprofile"),
-                persona.get("meta_programs"),
-                persona.get("philosophical_views"),
-                dialogue_id  # ← додаємо сюди
-            )
-            
-            await init_msg.delete()
-            translated = await translate_phrase(conn, db_user_id, "Conversation partner's profile generated.")
-            init_msg =await bot.send_message(
-                chat_id=chat_id,
-                text="✅ "+translated,
-                parse_mode="Markdown"
-            ) 
-            await conn.execute(
-                "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
-                db_user_id
-            )
+                dialogue_id = dialogue_row["id"]
                 
-            mark = 1
-            
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        #/////////////////////// ОБРОБКА РЕСПОНСУ на питання НАЛАШТУВАНЬ СПІВРОЗМОВНИКА //////////////////////////////////////
-        print("ОБРОБНИК команди - new_handle_dialogue")
-        if command_value == 'new_handle_dialogue':
-            print(f"in body handle generation profile")
-
-            #створення очикуваного співрозмовника
-
-            translated = await translate_phrase(conn, db_user_id, "Initializing the characteristics of your conversation partner...")
-            init_msg =await bot.send_message(
-                chat_id=chat_id,
-                text="✅ "+translated,
-                parse_mode="Markdown"
-            )
-
-            profile_reference = {
-                  "name": "Mariam",
-                  "age": 24,
-                  "country": "Egypt",
-                  "difficulty_level": "1–5",
-                  "religious_context": "muslim",
-                  "personality": "Skeptical but emotionally open",
-                  "barriers": ["God and suffering", "trust in religion"],
-                  "openness": "Medium",
-                  "goal": "To see if God is real and personal",
-                  "big_five_traits": {
-                        "openness": "high",
-                        "conscientiousness": "medium",
-                        "extraversion": "low",
-                        "agreeableness": "medium",
-                        "neuroticism": "high"
-                  },
-                  "temperament": "Melancholic",
-                  "worldview_and_values": ["Humanism", "Skepticism"],
-                  "beliefs": ["Religion is man-made", "God may exist but is distant"],
-                  "motivation_and_goals": ["Find meaning after loss", "Reconnect with hope"],
-                  "background": "Grew up in nominal faith, lost friend in accident",
-                  "erikson_stage": "Young adulthood — Intimacy vs. Isolation",
-                  "emotional_intelligence": "Moderate",
-                  "thinking_style": "Analytical with emotional interference",
-                  "biological_factors": ["Sleep-deprived", "Hormonal imbalance"],
-                  "social_context": ["Urban Egyptian culture", "Peers secular"],
-                  "enneagram": "Type 4 — Individualist",
-                  "disc_profile": "C — Conscientious",
-                  "stress_tolerance": "Low",
-                  "self_image": "Feels broken, searching for healing",
-                  "cognitive_biases": ["Confirmation bias", "Negativity bias"],
-                  "attachment_style": "Anxious-preoccupied",
-                  "religion": "Nominal Christian",
-                  "trauma_history": "Friend's death in accident — unresolved",
-                  "stress_level": "High",
-                  "habits": ["Night owl", "Avoids social events"],
-                  "why_contacted_us": "Saw Christian video that made her cry",
-                  "digital_behavior": ["Active on Instagram", "Searches for spiritual content"],
-                  "peer_pressure": ["Friends mock faith"],
-                  "attachment_history": "Emotionally distant parents (based on Bowlby theory)",
-                  "culture": "Middle Eastern / Egyptian",
-                  "neuroprofile": "Sensitive limbic response",
-                  "meta_programs": ["Away-from motivation", "External validation"],
-                  "philosophical_views": ["Existentialism", "Skepticism"]
-            }
-
-            messages = [
-                {
-                    "role": "system",
-                    "content": "Ти — помічник, який створює психологічні профілі вигаданих людей."
-                },
-                {
-                    "role": "user",
-                    "content": f"""Згенеруй новий профіль, використовуючи структуру та формат як в наданому нижче прикладі профілю, але з новими значеннями, які логічно відповідають полям.
-            
-            Ось приклад профілю:
-            {json.dumps(profile_reference, ensure_ascii=False, indent=2)}
-            
-            У значенні ключа `difficulty_level` в новому згенерованому профілі заміни цифру на характеристику, яка відповідає тій цифрі разом з цифрою з цього списку:
-              1 — Open, with a mild spiritual inquiry
-              2 — Doubtful, searching, but with barriers
-              3 — Emotionally wounded, closed-off, critical
-              4 — Hostile or apathetic, with negative personal experience
-              5 — Provocative, aggressive, theologically well-versed
-
-            При генерації полів профілю врахуй будь ласка ось ці побажання: {user_text}.
-
-            
-            Відповідь дай у форматі **JSON**, без жодних пояснень.
-            Без коду markdown, тільки чистий JSON."""
-                }
-            ]
-
-
-            
-            response = await query_openai_chat(messages=messages)
-            
-            # Парсимо json відповідь від чату
-            try:
-                persona = json.loads(response)
-            except Exception as e:
-                await bot.send_message(chat_id=chat_id, text=f"❌ Parsing error: {e}")
-                return {"status": "error_parsing_profile"}
-
-            # Вставляємо в базу
-            # 1. Створюємо новий діалог і витягуємо його id
-            dialogue_row = await conn.fetchrow(
-                """
-                INSERT INTO dialogues_stat (user_id) VALUES ($1)
-                RETURNING id
-                """,
-                db_user_id
-            )
-            dialogue_id = dialogue_row["id"]
-            
-            # 2. Вставляємо профіль з id_dialogue
-            await conn.execute(
-                """
-                INSERT INTO simulated_personas (
-                    user_id, name, age, country, difficulty_level, religious_context, personality,
-                    barriers, openness, goal, big_five_traits, temperament, worldview_and_values,
-                    beliefs, motivation_and_goals, background, erikson_stage, emotional_intelligence,
-                    thinking_style, biological_factors, social_context, enneagram, disc_profile,
-                    stress_tolerance, self_image, cognitive_biases, attachment_style, religion,
-                    trauma_history, stress_level, habits, why_contacted_us, digital_behavior,
-                    peer_pressure, attachment_history, culture, neuroprofile, meta_programs, philosophical_views,
-                    id_dialogue
-                ) VALUES (
-                    $1, $2, $3, $4, $5, $6, $7,
-                    $8, $9, $10, $11, $12, $13,
-                    $14, $15, $16, $17, $18,
-                    $19, $20, $21, $22, $23,
-                    $24, $25, $26, $27, $28,
-                    $29, $30, $31, $32, $33,
-                    $34, $35, $36, $37, $38, $39,
-                    $40
+                # 2. Вставляємо профіль з id_dialogue
+                await conn.execute(
+                    """
+                    INSERT INTO simulated_personas (
+                        user_id, name, age, country, difficulty_level, religious_context, personality,
+                        barriers, openness, goal, big_five_traits, temperament, worldview_and_values,
+                        beliefs, motivation_and_goals, background, erikson_stage, emotional_intelligence,
+                        thinking_style, biological_factors, social_context, enneagram, disc_profile,
+                        stress_tolerance, self_image, cognitive_biases, attachment_style, religion,
+                        trauma_history, stress_level, habits, why_contacted_us, digital_behavior,
+                        peer_pressure, attachment_history, culture, neuroprofile, meta_programs, philosophical_views,
+                        id_dialogue
+                    ) VALUES (
+                        $1, $2, $3, $4, $5, $6, $7,
+                        $8, $9, $10, $11, $12, $13,
+                        $14, $15, $16, $17, $18,
+                        $19, $20, $21, $22, $23,
+                        $24, $25, $26, $27, $28,
+                        $29, $30, $31, $32, $33,
+                        $34, $35, $36, $37, $38, $39,
+                        $40
+                    )
+                    """,
+                    db_user_id,
+                    persona.get("name"),
+                    persona.get("age"),
+                    persona.get("country"),
+                    persona.get("difficulty_level"),
+                    persona.get("religious_context"),
+                    persona.get("personality"),
+                    persona.get("barriers"),
+                    persona.get("openness"),
+                    persona.get("goal"),
+                    json.dumps(persona.get("big_five_traits")),
+                    persona.get("temperament"),
+                    persona.get("worldview_and_values"),
+                    persona.get("beliefs"),
+                    persona.get("motivation_and_goals"),
+                    persona.get("background"),
+                    persona.get("erikson_stage"),
+                    persona.get("emotional_intelligence"),
+                    persona.get("thinking_style"),
+                    persona.get("biological_factors"),
+                    persona.get("social_context"),
+                    persona.get("enneagram"),
+                    persona.get("disc_profile"),
+                    persona.get("stress_tolerance"),
+                    persona.get("self_image"),
+                    persona.get("cognitive_biases"),
+                    persona.get("attachment_style"),
+                    persona.get("religion"),
+                    persona.get("trauma_history"),
+                    persona.get("stress_level"),
+                    persona.get("habits"),
+                    persona.get("why_contacted_us"),
+                    persona.get("digital_behavior"),
+                    persona.get("peer_pressure"),
+                    persona.get("attachment_history"),
+                    persona.get("culture"),
+                    persona.get("neuroprofile"),
+                    persona.get("meta_programs"),
+                    persona.get("philosophical_views"),
+                    dialogue_id  # ← додаємо сюди
                 )
-                """,
-                db_user_id,
-                persona.get("name"),
-                persona.get("age"),
-                persona.get("country"),
-                persona.get("difficulty_level"),
-                persona.get("religious_context"),
-                persona.get("personality"),
-                persona.get("barriers"),
-                persona.get("openness"),
-                persona.get("goal"),
-                json.dumps(persona.get("big_five_traits")),
-                persona.get("temperament"),
-                persona.get("worldview_and_values"),
-                persona.get("beliefs"),
-                persona.get("motivation_and_goals"),
-                persona.get("background"),
-                persona.get("erikson_stage"),
-                persona.get("emotional_intelligence"),
-                persona.get("thinking_style"),
-                persona.get("biological_factors"),
-                persona.get("social_context"),
-                persona.get("enneagram"),
-                persona.get("disc_profile"),
-                persona.get("stress_tolerance"),
-                persona.get("self_image"),
-                persona.get("cognitive_biases"),
-                persona.get("attachment_style"),
-                persona.get("religion"),
-                persona.get("trauma_history"),
-                persona.get("stress_level"),
-                persona.get("habits"),
-                persona.get("why_contacted_us"),
-                persona.get("digital_behavior"),
-                persona.get("peer_pressure"),
-                persona.get("attachment_history"),
-                persona.get("culture"),
-                persona.get("neuroprofile"),
-                persona.get("meta_programs"),
-                persona.get("philosophical_views"),
-                dialogue_id  # ← додаємо сюди
-            )
-            
-            await init_msg.delete()
-            translated = await translate_phrase(conn, db_user_id, "Conversation partner's profile generated.")
-            init_msg =await bot.send_message(
-                chat_id=chat_id,
-                text="✅ "+translated,
-                parse_mode="Markdown"
-            )
- 
-            await conn.execute(
-                "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
-                db_user_id
-            )
                 
-            mark = 1
-
-
-
-        
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-        existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
-        #print(f"existing_user: {existing_user}")
-
-        #=========================================== ФУНКЦІЇ ПОШУКУ НЕВИЗНАЧЕНИХ ХАРАКТЕРИСТИК =============================
-
-        #////////////////////////////// ТЕСТ комірки ПРО МОВУ СПІЛКУВАННЯ ////////////////////////////////////
-        print("ТЕСТ команди - language")
-        if not existing_user["language"]:
-            print(f"Тест пустої комірки мови")
+                await init_msg.delete()
+                translated = await translate_phrase(conn, db_user_id, "Conversation partner's profile generated.")
+                init_msg =await bot.send_message(
+                    chat_id=chat_id,
+                    text="✅ "+translated,
+                    parse_mode="Markdown"
+                ) 
+                await conn.execute(
+                    "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
+                    db_user_id
+                )
+                    
+                mark = 1
+                
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+            #/////////////////////// ОБРОБКА РЕСПОНСУ на питання НАЛАШТУВАНЬ СПІВРОЗМОВНИКА //////////////////////////////////////
+            print("ОБРОБНИК команди - new_handle_dialogue")
+            if command_value == 'new_handle_dialogue':
+                print(f"in body handle generation profile")
+    
+                #створення очикуваного співрозмовника
+    
+                translated = await translate_phrase(conn, db_user_id, "Initializing the characteristics of your conversation partner...")
+                init_msg =await bot.send_message(
+                    chat_id=chat_id,
+                    text="✅ "+translated,
+                    parse_mode="Markdown"
+                )
+    
+                profile_reference = {
+                      "name": "Mariam",
+                      "age": 24,
+                      "country": "Egypt",
+                      "difficulty_level": "1–5",
+                      "religious_context": "muslim",
+                      "personality": "Skeptical but emotionally open",
+                      "barriers": ["God and suffering", "trust in religion"],
+                      "openness": "Medium",
+                      "goal": "To see if God is real and personal",
+                      "big_five_traits": {
+                            "openness": "high",
+                            "conscientiousness": "medium",
+                            "extraversion": "low",
+                            "agreeableness": "medium",
+                            "neuroticism": "high"
+                      },
+                      "temperament": "Melancholic",
+                      "worldview_and_values": ["Humanism", "Skepticism"],
+                      "beliefs": ["Religion is man-made", "God may exist but is distant"],
+                      "motivation_and_goals": ["Find meaning after loss", "Reconnect with hope"],
+                      "background": "Grew up in nominal faith, lost friend in accident",
+                      "erikson_stage": "Young adulthood — Intimacy vs. Isolation",
+                      "emotional_intelligence": "Moderate",
+                      "thinking_style": "Analytical with emotional interference",
+                      "biological_factors": ["Sleep-deprived", "Hormonal imbalance"],
+                      "social_context": ["Urban Egyptian culture", "Peers secular"],
+                      "enneagram": "Type 4 — Individualist",
+                      "disc_profile": "C — Conscientious",
+                      "stress_tolerance": "Low",
+                      "self_image": "Feels broken, searching for healing",
+                      "cognitive_biases": ["Confirmation bias", "Negativity bias"],
+                      "attachment_style": "Anxious-preoccupied",
+                      "religion": "Nominal Christian",
+                      "trauma_history": "Friend's death in accident — unresolved",
+                      "stress_level": "High",
+                      "habits": ["Night owl", "Avoids social events"],
+                      "why_contacted_us": "Saw Christian video that made her cry",
+                      "digital_behavior": ["Active on Instagram", "Searches for spiritual content"],
+                      "peer_pressure": ["Friends mock faith"],
+                      "attachment_history": "Emotionally distant parents (based on Bowlby theory)",
+                      "culture": "Middle Eastern / Egyptian",
+                      "neuroprofile": "Sensitive limbic response",
+                      "meta_programs": ["Away-from motivation", "External validation"],
+                      "philosophical_views": ["Existentialism", "Skepticism"]
+                }
+    
+                messages = [
+                    {
+                        "role": "system",
+                        "content": "Ти — помічник, який створює психологічні профілі вигаданих людей."
+                    },
+                    {
+                        "role": "user",
+                        "content": f"""Згенеруй новий профіль, використовуючи структуру та формат як в наданому нижче прикладі профілю, але з новими значеннями, які логічно відповідають полям.
+                
+                Ось приклад профілю:
+                {json.dumps(profile_reference, ensure_ascii=False, indent=2)}
+                
+                У значенні ключа `difficulty_level` в новому згенерованому профілі заміни цифру на характеристику, яка відповідає тій цифрі разом з цифрою з цього списку:
+                  1 — Open, with a mild spiritual inquiry
+                  2 — Doubtful, searching, but with barriers
+                  3 — Emotionally wounded, closed-off, critical
+                  4 — Hostile or apathetic, with negative personal experience
+                  5 — Provocative, aggressive, theologically well-versed
+    
+                При генерації полів профілю врахуй будь ласка ось ці побажання: {user_text}.
+    
+                
+                Відповідь дай у форматі **JSON**, без жодних пояснень.
+                Без коду markdown, тільки чистий JSON."""
+                    }
+                ]
+    
+    
+                
+                response = await query_openai_chat(messages=messages)
+                
+                # Парсимо json відповідь від чату
+                try:
+                    persona = json.loads(response)
+                except Exception as e:
+                    await bot.send_message(chat_id=chat_id, text=f"❌ Parsing error: {e}")
+                    return {"status": "error_parsing_profile"}
+    
+                # Вставляємо в базу
+                # 1. Створюємо новий діалог і витягуємо його id
+                dialogue_row = await conn.fetchrow(
+                    """
+                    INSERT INTO dialogues_stat (user_id) VALUES ($1)
+                    RETURNING id
+                    """,
+                    db_user_id
+                )
+                dialogue_id = dialogue_row["id"]
+                
+                # 2. Вставляємо профіль з id_dialogue
+                await conn.execute(
+                    """
+                    INSERT INTO simulated_personas (
+                        user_id, name, age, country, difficulty_level, religious_context, personality,
+                        barriers, openness, goal, big_five_traits, temperament, worldview_and_values,
+                        beliefs, motivation_and_goals, background, erikson_stage, emotional_intelligence,
+                        thinking_style, biological_factors, social_context, enneagram, disc_profile,
+                        stress_tolerance, self_image, cognitive_biases, attachment_style, religion,
+                        trauma_history, stress_level, habits, why_contacted_us, digital_behavior,
+                        peer_pressure, attachment_history, culture, neuroprofile, meta_programs, philosophical_views,
+                        id_dialogue
+                    ) VALUES (
+                        $1, $2, $3, $4, $5, $6, $7,
+                        $8, $9, $10, $11, $12, $13,
+                        $14, $15, $16, $17, $18,
+                        $19, $20, $21, $22, $23,
+                        $24, $25, $26, $27, $28,
+                        $29, $30, $31, $32, $33,
+                        $34, $35, $36, $37, $38, $39,
+                        $40
+                    )
+                    """,
+                    db_user_id,
+                    persona.get("name"),
+                    persona.get("age"),
+                    persona.get("country"),
+                    persona.get("difficulty_level"),
+                    persona.get("religious_context"),
+                    persona.get("personality"),
+                    persona.get("barriers"),
+                    persona.get("openness"),
+                    persona.get("goal"),
+                    json.dumps(persona.get("big_five_traits")),
+                    persona.get("temperament"),
+                    persona.get("worldview_and_values"),
+                    persona.get("beliefs"),
+                    persona.get("motivation_and_goals"),
+                    persona.get("background"),
+                    persona.get("erikson_stage"),
+                    persona.get("emotional_intelligence"),
+                    persona.get("thinking_style"),
+                    persona.get("biological_factors"),
+                    persona.get("social_context"),
+                    persona.get("enneagram"),
+                    persona.get("disc_profile"),
+                    persona.get("stress_tolerance"),
+                    persona.get("self_image"),
+                    persona.get("cognitive_biases"),
+                    persona.get("attachment_style"),
+                    persona.get("religion"),
+                    persona.get("trauma_history"),
+                    persona.get("stress_level"),
+                    persona.get("habits"),
+                    persona.get("why_contacted_us"),
+                    persona.get("digital_behavior"),
+                    persona.get("peer_pressure"),
+                    persona.get("attachment_history"),
+                    persona.get("culture"),
+                    persona.get("neuroprofile"),
+                    persona.get("meta_programs"),
+                    persona.get("philosophical_views"),
+                    dialogue_id  # ← додаємо сюди
+                )
+                
+                await init_msg.delete()
+                translated = await translate_phrase(conn, db_user_id, "Conversation partner's profile generated.")
+                init_msg =await bot.send_message(
+                    chat_id=chat_id,
+                    text="✅ "+translated,
+                    parse_mode="Markdown"
+                )
      
-            await conn.execute("""
-                INSERT INTO user_commands (user_id, command)
-                VALUES ($1, $2)
-                ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
-            """, db_user_id, "language")
-        
-            await bot.send_message(
-                chat_id=chat_id,
-                text="🔥 Enter your language",
-                parse_mode="Markdown"
-            )
-            return {"status": "waiting_language"}
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-        #/////////////////////////////////////// ТЕСТ комірки ДЕ ВКАЗАНО ІМЯ ////////////////////////////////////////////////
-        print("ТЕСТ команди - name")
-        if not existing_user["name"]:
-            print(f"Тест пустої комірки імя")
-
-
-            await conn.execute("""
-                INSERT INTO user_commands (user_id, command)
-                VALUES ($1, $2)
-                ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
-            """, db_user_id, "name")
-
-            translated = await translate_phrase(conn, db_user_id, "Please enter your name.")
-            await bot.send_message(
-                chat_id=chat_id,
-                text="🔥 "+translated,
-                parse_mode="Markdown"
-            )
-
-            return {"status": "waiting_name"}
-
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-        #/////////////////////////////////////// ТЕСТ комірки ДЕ ВКАЗАНО КРАЇНУ ////////////////////////////////////////////////
-        print("ТЕСТ команди - country")
-        if not existing_user["country"]:
-            print(f"Тест пустої комірки країни")
-
-
-            await conn.execute("""
-                INSERT INTO user_commands (user_id, command)
-                VALUES ($1, $2)
-                ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
-            """, db_user_id, "country")
-
-            translated = await translate_phrase(conn, db_user_id, "Which country are you from?")
-            await bot.send_message(
-                chat_id=chat_id,
-                text="🔥 "+ translated,
-                parse_mode="Markdown"
-            )
-
-            return {"status": "waiting_country"}
-
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        
-
-
-        #/////////////////////////////////////// ПИТАННЯ про РУЧНЕ ВИЗНАЧЕННЯ СПІВРОЗМОВНИКА ////////////////////////////////
-        print("ТЕСТ команди - initial")
-        if not existing_user["initial"]:
-            print(f"Тест пустої комірки initial")
-
-
-            await conn.execute("""
-                INSERT INTO user_commands (user_id, command)
-                VALUES ($1, $2)
-                ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
-            """, db_user_id, "before_dialogue")
-
-            translated = await translate_phrase(conn, db_user_id, "Would you like me to automatically generate the characteristics of your conversation partner?")
-            await bot.send_message(
-                chat_id=chat_id,
-                text="🔥 "+ translated,
-                parse_mode="Markdown",
-                reply_markup=keyboard
-            )
-
-            await conn.execute(
-                "UPDATE users SET initial = $1 WHERE id = $2",
-                'pss', db_user_id
-            )
-            return {"status": "waiting_seeker_status"}
-
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        
-        #///////////////////////////////// ПИТАННЯ чи ОСТАННЯ ДІЯ БУЛА ОБРОБНИКОМ таблиці users /////////////////////////////
-        print("ТЕСТ mark")
-        if mark == 1:
-            translated = await translate_phrase(conn, db_user_id, "Let's chat!")
-            await bot.send_message(
-                chat_id=chat_id,
-                text="🔥 "+ translated,
-                parse_mode="Markdown"
-            )
-            return {"status": "data_updated"}
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-        
-        #====================================================================================================================
-        #////////////////////////////////////////////////////// ДІАЛОГ  //////////////////////////////////////////////////////
-        #====================================================================================================================
-
-        print("ДІАЛОГ")
-        translated = await translate_phrase(conn, db_user_id, "I'm thinking...")
-        thinking_msg = await bot.send_message(
-            chat_id=chat_id,
-            text="🧠 "+ translated,
-            parse_mode="Markdown"
-        )
-        #thinking_msg = await bot.send_message(chat_id=chat_id, text="🧠 Думаю...")
-
-
-        msg_count, dialogue_id = await increment_message_count(conn, db_user_id)
-        print("📦 dialogue_id:", dialogue_id)
-
-        await conn.execute(
-            "INSERT INTO dialogs (user_id, role, message, created_at, id_dialogue) VALUES ($1, 'user', $2, NOW(), $3)",
-            db_user_id, user_text, dialogue_id
-        )
-
-        rows = await conn.fetch(
-            "SELECT role, message FROM dialogs WHERE user_id = $1 ORDER BY id DESC LIMIT 10",
-            db_user_id
-        )
-        rows = list(reversed(rows))
-
-        
-        user_messages = [
-            {
-                "role": "assistant" if row["role"] == "ai" else row["role"],
-                "content": row["message"]
-            }
-            for row in rows
-        ]
-
-        print("📦 user_id:", db_user_id)
-        # Витягнути профіль із бази для користувача (припустимо, user_id)
-        profile_row = await conn.fetchrow(
-            "SELECT * FROM simulated_personas WHERE user_id = $1 AND id_dialogue = $2",
-            db_user_id, dialogue_id
-        )
-        #print("📦 profile_row:", profile_row)
-        if not profile_row:
-            # Якщо профілю немає, можеш повернути порожній список або дефолтний профіль
-            print("📦 profile is empty:")
-            profile_content = "{}"
-        else:
-            # Припустимо, що профіль у таблиці збережений у полі profile_json у вигляді JSON рядка
-            # Збираємо словник із профілем
-            profile_content = {
-                "name": profile_row["name"],
-                "age": profile_row["age"],
-                "country": profile_row["country"],
-                "difficulty_level": profile_row["difficulty_level"],
-                "religious_context": profile_row["religious_context"],
-                "personality": profile_row["personality"],
-                "barriers": profile_row["barriers"],  # якщо список — залишаємо
-                "openness": profile_row["openness"],
-                "goal": profile_row["goal"],
-                "big_five_traits": json.loads(profile_row["big_five_traits"]),
-                "temperament": profile_row["temperament"],
-                "worldview_and_values": profile_row["worldview_and_values"],
-                "beliefs": profile_row["beliefs"],
-                "motivation_and_goals": profile_row["motivation_and_goals"],
-                "background": profile_row["background"],
-                "erikson_stage": profile_row["erikson_stage"],
-                "emotional_intelligence": profile_row["emotional_intelligence"],
-                "thinking_style": profile_row["thinking_style"],
-                "biological_factors": profile_row["biological_factors"],
-                "social_context": profile_row["social_context"],
-                "enneagram": profile_row["enneagram"],
-                "disc_profile": profile_row["disc_profile"],
-                "stress_tolerance": profile_row["stress_tolerance"],
-                "self_image": profile_row["self_image"],
-                "cognitive_biases": profile_row["cognitive_biases"],
-                "attachment_style": profile_row["attachment_style"],
-                "religion": profile_row["religion"],
-                "trauma_history": profile_row["trauma_history"],
-                "stress_level": profile_row["stress_level"],
-                "habits": profile_row["habits"],
-                "why_contacted_us": profile_row["why_contacted_us"],
-                "digital_behavior": profile_row["digital_behavior"],
-                "peer_pressure": profile_row["peer_pressure"],
-                "attachment_history": profile_row["attachment_history"],
-                "culture": profile_row["culture"],
-                "neuroprofile": profile_row["neuroprofile"],
-                "meta_programs": profile_row["meta_programs"],
-                "philosophical_views": profile_row["philosophical_views"],
-            }
-        
-            # перетворимо на гарно форматований текст
-            profile_content = json.dumps(profile_content, ensure_ascii=False, indent=2)
-            #print("📦 profile_content:", profile_content)
-        
-        # Створюємо system prompt
-        system_message = {
-            "role": "system",
-            "content": f"You behave like a person who possesses the personality traits specified in the profile: {profile_content}. You do not take the initiative to offer consultative help as a typical chat assistant would. Instead, you tend to ask simple or banal questions yourself."
-        }
-        
-        # Далі формуємо список повідомлень, додаємо system_message спочатку, потім user_messages
-        messages = [system_message] + user_messages
-
+                await conn.execute(
+                    "UPDATE user_commands SET command = 'none' WHERE user_id = $1",
+                    db_user_id
+                )
+                    
+                mark = 1
     
-        # messages = [{"role": row["role"], "content": row["message"]} for row in rows]
-        # messages = [{'role': 'user', 'content': user_text}]
-
-        response_text = await query_openai_chat(messages)
-
-  
-        await conn.execute(
-            "INSERT INTO dialogs (user_id, role, message, created_at, id_dialogue) VALUES ($1, 'ai', $2, NOW(), $3)",
-            db_user_id, response_text, dialogue_id
-        )
-        
-        try:
-            await thinking_msg.delete()
-        except:
-            pass
-
-        await bot.send_message(chat_id=chat_id, text=response_text)
-
-        #====================================================================================================================
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        #====================================================================================================================
-
-        
-
-        #///////////////////////////////// ПИТАННЯ ЗАВЕРШЕННЯ ДІАЛОЛГУ (вичерпання месиджів) ////////////////////////////////
-        if msg_count and msg_count >= 11:
-            init_msg = await bot.send_message(chat_id=chat_id, text=f"🔔")
-            await asyncio.sleep(1)  # Затримка 1 секунду
-            await init_msg.delete()
-            init_msg = await bot.send_message(chat_id=chat_id, text=f"🔔🔔")
-            await asyncio.sleep(1)  # Затримка 1 секунду
-            await init_msg.delete()
-            init_msg = await bot.send_message(chat_id=chat_id, text=f"🔔🔔🔔")
-            await asyncio.sleep(1)  # Затримка 1 секунду
-            await init_msg.delete()
-            translated = await translate_phrase(conn, db_user_id, "Your dialogue has come to an end. We will now conduct a detailed analysis and summarize the results.")
-            init_msg =await bot.send_message(
+    
+    
+            
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
+    
+            existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
+            #print(f"existing_user: {existing_user}")
+    
+            #=========================================== ФУНКЦІЇ ПОШУКУ НЕВИЗНАЧЕНИХ ХАРАКТЕРИСТИК =============================
+    
+            #////////////////////////////// ТЕСТ комірки ПРО МОВУ СПІЛКУВАННЯ ////////////////////////////////////
+            print("ТЕСТ команди - language")
+            if not existing_user["language"]:
+                print(f"Тест пустої комірки мови")
+         
+                await conn.execute("""
+                    INSERT INTO user_commands (user_id, command)
+                    VALUES ($1, $2)
+                    ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
+                """, db_user_id, "language")
+            
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text="🔥 Enter your language",
+                    parse_mode="Markdown"
+                )
+                return {"status": "waiting_language"}
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
+            #/////////////////////////////////////// ТЕСТ комірки ДЕ ВКАЗАНО ІМЯ ////////////////////////////////////////////////
+            print("ТЕСТ команди - name")
+            if not existing_user["name"]:
+                print(f"Тест пустої комірки імя")
+    
+    
+                await conn.execute("""
+                    INSERT INTO user_commands (user_id, command)
+                    VALUES ($1, $2)
+                    ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
+                """, db_user_id, "name")
+    
+                translated = await translate_phrase(conn, db_user_id, "Please enter your name.")
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text="🔥 "+translated,
+                    parse_mode="Markdown"
+                )
+    
+                return {"status": "waiting_name"}
+    
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
+            #/////////////////////////////////////// ТЕСТ комірки ДЕ ВКАЗАНО КРАЇНУ ////////////////////////////////////////////////
+            print("ТЕСТ команди - country")
+            if not existing_user["country"]:
+                print(f"Тест пустої комірки країни")
+    
+    
+                await conn.execute("""
+                    INSERT INTO user_commands (user_id, command)
+                    VALUES ($1, $2)
+                    ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
+                """, db_user_id, "country")
+    
+                translated = await translate_phrase(conn, db_user_id, "Which country are you from?")
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text="🔥 "+ translated,
+                    parse_mode="Markdown"
+                )
+    
+                return {"status": "waiting_country"}
+    
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            
+    
+    
+            #/////////////////////////////////////// ПИТАННЯ про РУЧНЕ ВИЗНАЧЕННЯ СПІВРОЗМОВНИКА ////////////////////////////////
+            print("ТЕСТ команди - initial")
+            if not existing_user["initial"]:
+                print(f"Тест пустої комірки initial")
+    
+    
+                await conn.execute("""
+                    INSERT INTO user_commands (user_id, command)
+                    VALUES ($1, $2)
+                    ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
+                """, db_user_id, "before_dialogue")
+    
+                translated = await translate_phrase(conn, db_user_id, "Would you like me to automatically generate the characteristics of your conversation partner?")
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text="🔥 "+ translated,
+                    parse_mode="Markdown",
+                    reply_markup=keyboard
+                )
+    
+                await conn.execute(
+                    "UPDATE users SET initial = $1 WHERE id = $2",
+                    'pss', db_user_id
+                )
+                return {"status": "waiting_seeker_status"}
+    
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            
+            #///////////////////////////////// ПИТАННЯ чи ОСТАННЯ ДІЯ БУЛА ОБРОБНИКОМ таблиці users /////////////////////////////
+            print("ТЕСТ mark")
+            if mark == 1:
+                translated = await translate_phrase(conn, db_user_id, "Let's chat!")
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text="🔥 "+ translated,
+                    parse_mode="Markdown"
+                )
+                return {"status": "data_updated"}
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
+    
+            
+            #====================================================================================================================
+            #////////////////////////////////////////////////////// ДІАЛОГ  //////////////////////////////////////////////////////
+            #====================================================================================================================
+    
+            print("ДІАЛОГ")
+            translated = await translate_phrase(conn, db_user_id, "I'm thinking...")
+            thinking_msg = await bot.send_message(
                 chat_id=chat_id,
-                text="✅ "+translated,
+                text="🧠 "+ translated,
                 parse_mode="Markdown"
             )
-            await summarize_dialogue(conn, dialogue_id, chat_id, db_user_id)
-            translated = await translate_phrase(conn, db_user_id, "\n\nThank you for the conversation. \nYou will automatically be offered to generate a new respondent profile and start a new dialogue.")
-            init_msg =await bot.send_message(
-                chat_id=chat_id,
-                text="✅ "+translated,
-                parse_mode="Markdown"
-            )
+            #thinking_msg = await bot.send_message(chat_id=chat_id, text="🧠 Думаю...")
+    
+    
+            msg_count, dialogue_id = await increment_message_count(conn, db_user_id)
+            print("📦 dialogue_id:", dialogue_id)
+    
             await conn.execute(
-                "UPDATE user_commands SET command = 'before_dialogue' WHERE user_id = $1",
+                "INSERT INTO dialogs (user_id, role, message, created_at, id_dialogue) VALUES ($1, 'user', $2, NOW(), $3)",
+                db_user_id, user_text, dialogue_id
+            )
+    
+            rows = await conn.fetch(
+                "SELECT role, message FROM dialogs WHERE user_id = $1 ORDER BY id DESC LIMIT 10",
                 db_user_id
             )
-
-            translated = await translate_phrase(conn, db_user_id, "Would you like me to automatically generate the characteristics of your conversation partner?")
-            init_msg =await bot.send_message(
-                chat_id=chat_id,
-                text="🔥 "+translated,
-                parse_mode="Markdown"
-            )
-        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-           
-
-
+            rows = list(reversed(rows))
     
-
-
-
-
-    finally:
-        await conn.close()
-
-
-    return {"status": "ok"}
+            
+            user_messages = [
+                {
+                    "role": "assistant" if row["role"] == "ai" else row["role"],
+                    "content": row["message"]
+                }
+                for row in rows
+            ]
+    
+            print("📦 user_id:", db_user_id)
+            # Витягнути профіль із бази для користувача (припустимо, user_id)
+            profile_row = await conn.fetchrow(
+                "SELECT * FROM simulated_personas WHERE user_id = $1 AND id_dialogue = $2",
+                db_user_id, dialogue_id
+            )
+            #print("📦 profile_row:", profile_row)
+            if not profile_row:
+                # Якщо профілю немає, можеш повернути порожній список або дефолтний профіль
+                print("📦 profile is empty:")
+                profile_content = "{}"
+            else:
+                # Припустимо, що профіль у таблиці збережений у полі profile_json у вигляді JSON рядка
+                # Збираємо словник із профілем
+                profile_content = {
+                    "name": profile_row["name"],
+                    "age": profile_row["age"],
+                    "country": profile_row["country"],
+                    "difficulty_level": profile_row["difficulty_level"],
+                    "religious_context": profile_row["religious_context"],
+                    "personality": profile_row["personality"],
+                    "barriers": profile_row["barriers"],  # якщо список — залишаємо
+                    "openness": profile_row["openness"],
+                    "goal": profile_row["goal"],
+                    "big_five_traits": json.loads(profile_row["big_five_traits"]),
+                    "temperament": profile_row["temperament"],
+                    "worldview_and_values": profile_row["worldview_and_values"],
+                    "beliefs": profile_row["beliefs"],
+                    "motivation_and_goals": profile_row["motivation_and_goals"],
+                    "background": profile_row["background"],
+                    "erikson_stage": profile_row["erikson_stage"],
+                    "emotional_intelligence": profile_row["emotional_intelligence"],
+                    "thinking_style": profile_row["thinking_style"],
+                    "biological_factors": profile_row["biological_factors"],
+                    "social_context": profile_row["social_context"],
+                    "enneagram": profile_row["enneagram"],
+                    "disc_profile": profile_row["disc_profile"],
+                    "stress_tolerance": profile_row["stress_tolerance"],
+                    "self_image": profile_row["self_image"],
+                    "cognitive_biases": profile_row["cognitive_biases"],
+                    "attachment_style": profile_row["attachment_style"],
+                    "religion": profile_row["religion"],
+                    "trauma_history": profile_row["trauma_history"],
+                    "stress_level": profile_row["stress_level"],
+                    "habits": profile_row["habits"],
+                    "why_contacted_us": profile_row["why_contacted_us"],
+                    "digital_behavior": profile_row["digital_behavior"],
+                    "peer_pressure": profile_row["peer_pressure"],
+                    "attachment_history": profile_row["attachment_history"],
+                    "culture": profile_row["culture"],
+                    "neuroprofile": profile_row["neuroprofile"],
+                    "meta_programs": profile_row["meta_programs"],
+                    "philosophical_views": profile_row["philosophical_views"],
+                }
+            
+                # перетворимо на гарно форматований текст
+                profile_content = json.dumps(profile_content, ensure_ascii=False, indent=2)
+                #print("📦 profile_content:", profile_content)
+            
+            # Створюємо system prompt
+            system_message = {
+                "role": "system",
+                "content": f"You behave like a person who possesses the personality traits specified in the profile: {profile_content}. You do not take the initiative to offer consultative help as a typical chat assistant would. Instead, you tend to ask simple or banal questions yourself."
+            }
+            
+            # Далі формуємо список повідомлень, додаємо system_message спочатку, потім user_messages
+            messages = [system_message] + user_messages
+    
+        
+            # messages = [{"role": row["role"], "content": row["message"]} for row in rows]
+            # messages = [{'role': 'user', 'content': user_text}]
+    
+            response_text = await query_openai_chat(messages)
+    
+      
+            await conn.execute(
+                "INSERT INTO dialogs (user_id, role, message, created_at, id_dialogue) VALUES ($1, 'ai', $2, NOW(), $3)",
+                db_user_id, response_text, dialogue_id
+            )
+            
+            try:
+                await thinking_msg.delete()
+            except:
+                pass
+    
+            await bot.send_message(chat_id=chat_id, text=response_text)
+    
+            #====================================================================================================================
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            #====================================================================================================================
+    
+            
+    
+            #///////////////////////////////// ПИТАННЯ ЗАВЕРШЕННЯ ДІАЛОЛГУ (вичерпання месиджів) ////////////////////////////////
+            if msg_count and msg_count >= 11:
+                init_msg = await bot.send_message(chat_id=chat_id, text=f"🔔")
+                await asyncio.sleep(1)  # Затримка 1 секунду
+                await init_msg.delete()
+                init_msg = await bot.send_message(chat_id=chat_id, text=f"🔔🔔")
+                await asyncio.sleep(1)  # Затримка 1 секунду
+                await init_msg.delete()
+                init_msg = await bot.send_message(chat_id=chat_id, text=f"🔔🔔🔔")
+                await asyncio.sleep(1)  # Затримка 1 секунду
+                await init_msg.delete()
+                translated = await translate_phrase(conn, db_user_id, "Your dialogue has come to an end. We will now conduct a detailed analysis and summarize the results.")
+                init_msg =await bot.send_message(
+                    chat_id=chat_id,
+                    text="✅ "+translated,
+                    parse_mode="Markdown"
+                )
+                await summarize_dialogue(conn, dialogue_id, chat_id, db_user_id)
+                translated = await translate_phrase(conn, db_user_id, "\n\nThank you for the conversation. \nYou will automatically be offered to generate a new respondent profile and start a new dialogue.")
+                init_msg =await bot.send_message(
+                    chat_id=chat_id,
+                    text="✅ "+translated,
+                    parse_mode="Markdown"
+                )
+                await conn.execute(
+                    "UPDATE user_commands SET command = 'before_dialogue' WHERE user_id = $1",
+                    db_user_id
+                )
+    
+                translated = await translate_phrase(conn, db_user_id, "Would you like me to automatically generate the characteristics of your conversation partner?")
+                init_msg =await bot.send_message(
+                    chat_id=chat_id,
+                    text="🔥 "+translated,
+                    parse_mode="Markdown"
+                )
+            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+               
+    
+    
+        
+    
+    
+    
+    
+        finally:
+            await conn.close()
+    
+    
+        return {"status": "ok"}
