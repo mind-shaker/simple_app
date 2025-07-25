@@ -386,6 +386,9 @@ async def telegram_webhook(request: Request):
         message_id = callback["message"]["message_id"]
         user_id = callback["from"]["id"]
 
+        existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
+        db_user_id = existing_user["id"] if existing_user else (await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id))["id"]
+
         print(f"Отримано натискання кнопки: {callback_data}")
         mark = 0
         
