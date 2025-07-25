@@ -378,6 +378,7 @@ async def startup_event():
 async def telegram_webhook(request: Request):
     print(f"отримано запиту з телеграма")
     data = await request.json()
+    conn = await get_connection() #++++++++++++++++++++++ ВИКЛИК ФУНКЦІЇ "Отримання з'єднання з PostgreSQL" 0 +++++++++++++++++++
     # Обробка callback_query (натискання кнопок)
     if "callback_query" in data:
         callback = data["callback_query"]
@@ -441,7 +442,7 @@ async def telegram_webhook(request: Request):
     
         mark = 0
         #-------------------------- Робота з базою (вилучено):
-        conn = await get_connection() #++++++++++++++++++++++ ВИКЛИК ФУНКЦІЇ "Отримання з'єднання з PostgreSQL" 0 +++++++++++++++++++
+        
         try:
             #///////////////////////////////////////// ТЕСТ НА ПЕРШИЙ ВХІД В БОТА //////////////////////////////////////////////
             print("ТЕСТ НА ПЕРШИЙ ВХІД В БОТА")
