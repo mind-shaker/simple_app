@@ -581,20 +581,15 @@ async def telegram_webhook(request: Request):
                 📈 As your communication skills improve, the AI will make the seeker’s character more challenging.
                 
                 *Good luck!* 💪
-    
-    
-    
-    
-    
-                
                 """
 
-                await reg_process_msg.delete()
+                
                 translated = await translate_phrase(conn, db_user_id, text_to_translate)
+                await reg_process_msg.delete()
                 await bot.send_message(
                     chat_id=chat_id,
                     text=translated +"\n\n\n\n---------",
-                    #parse_mode="Markdown"
+                    parse_mode="Markdown"
                 )
         
                 
