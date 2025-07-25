@@ -1,0 +1,164 @@
+[
+  {
+    "Error": "Judgment and Criticism",
+    "Detailed Description (for AI detection)": "Error is detected if the pioneer's message contains direct evaluative judgments about the seeker's behavior (phrases like \"\"you're wrong\"\", \"\"that's sin\"\", \"\"you should be ashamed\"\") without empathy or softening; AI checks for the absence of sympathy phrases (\"\"I understand your pain\"\") in the same message.",
+    "Examples": "1. \"\"You're living wrong, that's sin before God.\"\" 2. \"\"How could you do that? It's condemnable.\"\" 3. \"\"Your actions show you don't respect yourself.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (teenagers, traumatized)"
+  },
+  {
+    "Error": "Arrogance and Imposition",
+    "Detailed Description (for AI detection)": "Detection: message imposes the pioneer's opinion as the only correct one (phrases \"\"I know better\"\", \"\"you must accept my viewpoint\"\", \"\"listen to me\"\") without questions or invitation to reflection; AI looks for imperatives without alternatives.",
+    "Examples": "1. \"\"I know better what you need — just listen.\"\" 2. \"\"You must make this decision right now.\"\" 3. \"\"My thoughts are right, yours are not.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (closed/low openness, skeptics)"
+  },
+  {
+    "Error": "Rebuke without Love",
+    "Detailed Description (for AI detection)": "Error if accusing of sins is sharp/offensive (phrases \"\"you're a sinner\"\", \"\"that's your sin\"\") without sympathy/love; AI checks if >50% of text is rebuke without \"\"I understand\"\".",
+    "Examples": "1. \"\"You're sinning, and it's evident from your words.\"\" 2. \"\"I accuse you: your actions are pure sin.\"\" 3. \"\"You're in sin, and God sees it.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (traumatized, Muslims/other religions)"
+  },
+  {
+    "Error": "Premature Actions",
+    "Detailed Description (for AI detection)": "Detection: in first 3-5 messages, offering prayer/repentance (phrases \"\"let's pray\"\", \"\"repent now\"\") without preparation (no questions about readiness); AI counts messages from the start.",
+    "Examples": "1. \"\"In first message: Let's pray for repentance right away.\"\" 2. \"\"Ready? No? Congratulations on the decision anyway.\"\" 3. \"\"Without preparation: Repeat the prayer after me.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (low openness, traumatized)"
+  },
+  {
+    "Error": "Taking Sides",
+    "Detailed Description (for AI detection)": "Error if explicitly supporting one side in conflicts (phrases \"\"your family is wrong\"\", \"\"you're right, they're guilty\"\") without neutrality; AI looks for binary judgments about people.",
+    "Examples": "1. \"\"Your parents are wrong, you're great.\"\" 2. \"\"In conflict: I'm on your side, they're mistaken.\"\" 3. \"\"Your friend is guilty, not you.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (traumatized, high stress)"
+  },
+  {
+    "Error": "Devaluing the Problem",
+    "Detailed Description (for AI detection)": "Detection: phrases minimizing pain (\"\"not that scary\"\", \"\"it happens worse\"\", \"\"just don't think about it\"\"); AI checks in response to problem description.",
+    "Examples": "1. \"\"It's not scary, others have it worse.\"\" 2. \"\"Just don't think about it, it'll pass.\"\" 3. \"\"It happens worse, don't worry in vain.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (traumatized, emotional)"
+  },
+  {
+    "Error": "\"\"Trading\"\" with God on Behalf of the Interlocutor",
+    "Detailed Description (for AI detection)": "Error if promising specific blessings from God (phrases \"\"if you pray, God will give a job/health\"\"); AI looks for conditional promises without disclaimers.",
+    "Examples": "1. \"\"Pray, and God will give you a job.\"\" 2. \"\"If you trust, health will return.\"\" 3. \"\"God will give relationships if you ask.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (skeptics, Muslims)"
+  },
+  {
+    "Error": "Role of Unqualified Psychotherapist",
+    "Detailed Description (for AI detection)": "Detection: analyzing traumas/diagnoses (phrases \"\"it's from childhood\"\", \"\"you have depression because\"\"); AI checks for lack of qualification in profile.",
+    "Examples": "1. \"\"Your trauma is from childhood, let's break it down.\"\" 2. \"\"You have a diagnosis: anxiety from parents.\"\" 3. \"\"Using technique: Recall the trauma.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (traumatized, low emotional intelligence)"
+  },
+  {
+    "Error": "Provoking Conflict",
+    "Detailed Description (for AI detection)": "Error if pushing towards argument (phrases \"\"tell them directly they're wrong\"\"); AI looks for calls to action against close ones.",
+    "Examples": "1. \"\"Go and tell your parents they're mistaken.\"\" 2. \"\"Conflict with them, they're wrong.\"\" 3. \"\"Directly state you're right.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (traumatized, high stress)"
+  },
+  {
+    "Error": "Ad Hominem (Attack on Personality)",
+    "Detailed Description (for AI detection)": "Detection: criticizing the seeker's personality instead of arguments (phrases \"\"you're stupid\"\", \"\"your faith is weak\"\"); AI distinguishes from idea discussion.",
+    "Examples": "1. \"\"You're stupid if you don't believe.\"\" 2. \"\"Your personality is weak, that's why.\"\" 3. \"\"You're selfish, not the arguments.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (skeptics, analytical)"
+  },
+  {
+    "Error": "Prosperity Gospel",
+    "Detailed Description (for AI detection)": "Error if God is presented as a tool for well-being (phrases \"\"God will give wealth\"\"); AI looks for material promises without disclaimers.",
+    "Examples": "1. \"\"Believe, and God will give money.\"\" 2. \"\"God is for prosperity and health.\"\" 3. \"\"Miracles: God will bless generously.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (Muslims, skeptics)"
+  },
+  {
+    "Error": "\"\"Fire and Brimstone\"\" Gospel",
+    "Detailed Description (for AI detection)": "Detection: focus only on wrath/hell (phrases \"\"God will punish\"\"); AI checks absence of love/mercy words.",
+    "Examples": "1. \"\"God is angry, hell for sinners.\"\" 2. \"\"Only judgment and fire, without love.\"\" 3. \"\"God's wrath upon you.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (traumatized, low openness)"
+  },
+  {
+    "Error": "Promises God Didn't Make",
+    "Detailed Description (for AI detection)": "Error if guaranteeing life without problems (phrases \"\"after conversion — no sufferings\"\"); AI looks for absolutes.",
+    "Examples": "1. \"\"After faith — life without problems.\"\" 2. \"\"God promises no sufferings.\"\" 3. \"\"No troubles after repentance.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (high stress, traumatized)"
+  },
+  {
+    "Error": "Incorrect Advice",
+    "Detailed Description (for AI detection)": "Detection: specific advice outside competence (phrases \"\"take this medicine\"\"); AI checks medical/legal topics.",
+    "Examples": "1. \"\"Drink this medicine for depression.\"\" 2. \"\"Finances: invest here.\"\" 3. \"\"Legally: file a complaint.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (culturally sensitive, traumatized)"
+  },
+  {
+    "Error": "Refusal of Baptism/Church Membership for Non-Biblical Reasons",
+    "Detailed Description (for AI detection)": "Error if setting own standards (phrases \"\"you're not ready by my rules\"\"); AI looks for non-biblical criteria.",
+    "Examples": "1. \"\"We don't baptize, you don't meet.\"\" 2. \"\"Membership: my standards not met.\"\" 3. \"\"Refusal: for personal reasons.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (Muslims, skeptics)"
+  },
+  {
+    "Error": "Creating False Urgency",
+    "Detailed Description (for AI detection)": "Detection: pressure for immediate decision (phrases \"\"now or too late\"\"); AI checks timers/threats.",
+    "Examples": "1. \"\"Make a decision now, otherwise too late.\"\" 2. \"\"Urgently: or God will turn away.\"\" 3. \"\"Don't delay, it'll be too late.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (high stress, traumatized)"
+  },
+  {
+    "Error": "Insensitivity to Religious Background",
+    "Detailed Description (for AI detection)": "Error if arguments offend background (phrases \"\"your religion is false\"\"); AI checks other faith mention.",
+    "Examples": "1. \"\"Islam is a mistake, accept Christ.\"\" 2. \"\"Atheism is stupid, God is real.\"\" 3. \"\"Your faith is offensive.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (Muslims/other religions, skeptics)"
+  },
+  {
+    "Error": "Blurring Roles",
+    "Detailed Description (for AI detection)": "Detection: shift to friendship/romance (phrases \"\"let's meet\"\"); AI looks for personal offers.",
+    "Examples": "1. \"\"Become friends outside chat.\"\" 2. \"\"This is romantic, let's get closer.\"\" 3. \"\"Shift to personal.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (teenagers, traumatized)"
+  },
+  {
+    "Error": "Ignoring Direct Refusal to Communicate",
+    "Detailed Description (for AI detection)": "Error if continuing after refusal (phrases \"\"but let's\"\" after \"\"don't want\"\"); AI checks sequence.",
+    "Examples": "1. Seeker: \"\"Don't write.\"\" Pioneer: \"\"But let's talk.\"\" 2. \"\"Ignoring: One more question.\"\" 3. \"\"Continues despite stop.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (closed, high stress)"
+  },
+  {
+    "Error": "Disclosure of Personal Information",
+    "Detailed Description (for AI detection)": "Detection: sharing personal data (phrases \"\"my address\"\"); AI looks for confidential details.",
+    "Examples": "1. \"\"My age 15, and phone...\"\" 2. \"\"Address: live nearby.\"\" 3. \"\"Data: call me.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (teenagers, culturally sensitive)"
+  },
+  {
+    "Error": "Violation of Personal Boundaries",
+    "Detailed Description (for AI detection)": "Error if too personal questions without readiness (phrases \"\"tell about sex\"\"); AI checks intimate topics.",
+    "Examples": "1. \"\"Tell about your intimate problems.\"\" 2. \"\"Not ready? Ask anyway.\"\" 3. \"\"Personal details: your secrets.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (traumatized, closed)"
+  },
+  {
+    "Error": "Legalism",
+    "Detailed Description (for AI detection)": "Detection: list of rules as salvation condition (phrases \"\"must observe prohibitions\"\"); AI counts >3 rules.",
+    "Examples": "1. \"\"Salvation: list of 10 rules.\"\" 2. \"\"Prohibitions: or no salvation.\"\" 3. \"\"My rules — condition.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (Muslims, skeptics)"
+  },
+  {
+    "Error": "Incorrect Explanation of Suffering",
+    "Detailed Description (for AI detection)": "Error if sufferings = punishment (phrases \"\"illness — for sin\"\"); AI looks for causal links.",
+    "Examples": "1. \"\"Your illness — God's punishment.\"\" 2. \"\"Problems from specific sin.\"\" 3. \"\"Sufferings = your misdeed.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (traumatized, high stress)"
+  },
+  {
+    "Error": "Imposing Own Cultural Worship Format",
+    "Detailed Description (for AI detection)": "Detection: own style as only correct (phrases \"\"only our music\"\"); AI checks imposition.",
+    "Examples": "1. \"\"Worship: only our style.\"\" 2. \"\"Service: like ours, otherwise no.\"\" 3. \"\"Our music — the only one.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (culturally sensitive, Muslims)"
+  },
+  {
+    "Error": "Lack of Understanding Local Legislation",
+    "Detailed Description (for AI detection)": "Error if ignoring laws in problems (phrases \"\"ignore law\"\"); AI checks serious topics.",
+    "Examples": "1. \"\"In violence: don't call police.\"\" 2. \"\"Law: ignore, God will help.\"\" 3. \"\"Threats: solve yourself, without authorities.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (culturally sensitive, traumatized)"
+  },
+  {
+    "Error": "Too Quick Transition to Personal Channels",
+    "Detailed Description (for AI detection)": "Detection: insisting on switch (phrases \"\"let's to social networks\"\"); AI checks readiness.",
+    "Examples": "1. \"\"Switch to Instagram now.\"\" 2. \"\"Not ready? Anyway let's.\"\" 3. \"\"Personal messengers: I insist.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (closed, teenagers)"
+  },
+  {
+    "Error": "Providing \"\"Tasks\"\" Saying \"\"You Must\"\"",
+    "Detailed Description (for AI detection)": "Error if imperatives without motivation (phrases \"\"you must read\"\"); AI looks for \"\"must\"\" without \"\"recommend\"\".",
+    "Examples": "1. \"\"You must pray daily.\"\" 2. \"\"Must read, otherwise no.\"\" 3. \"\"Task: must fulfill.\"\"",
+    "Cost in Points": "-3 (standard) / -4 (teenagers, low openness)"
+  }
+]
