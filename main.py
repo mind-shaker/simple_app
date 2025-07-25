@@ -36,51 +36,57 @@ keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="add your own preferences", callback_data="As you wish")]
 ])
 
+with open('errors.json', 'r', encoding='utf-8') as f:
+    ERRORS = json.load(f)
+
+errors_list = json.dumps(ERRORS, ensure_ascii=False, indent=2)
+
 profile_reference = {
-      "name": "Mariam",
-      "age": 24,
-      "country": "Egypt",
-      "difficulty_level": "1–5",
-      "religious_context": "muslim",
-      "personality": "Skeptical but emotionally open",
-      "barriers": ["God and suffering", "trust in religion"],
-      "openness": "Medium",
-      "goal": "To see if God is real and personal",
-      "big_five_traits": {
-            "openness": "high",
-            "conscientiousness": "medium",
-            "extraversion": "low",
-            "agreeableness": "medium",
-            "neuroticism": "high"
-      },
-      "temperament": "Melancholic",
-      "worldview_and_values": ["Humanism", "Skepticism"],
-      "beliefs": ["Religion is man-made", "God may exist but is distant"],
-      "motivation_and_goals": ["Find meaning after loss", "Reconnect with hope"],
-      "background": "Grew up in nominal faith, lost friend in accident",
-      "erikson_stage": "Young adulthood — Intimacy vs. Isolation",
-      "emotional_intelligence": "Moderate",
-      "thinking_style": "Analytical with emotional interference",
-      "biological_factors": ["Sleep-deprived", "Hormonal imbalance"],
-      "social_context": ["Urban Egyptian culture", "Peers secular"],
-      "enneagram": "Type 4 — Individualist",
-      "disc_profile": "C — Conscientious",
-      "stress_tolerance": "Low",
-      "self_image": "Feels broken, searching for healing",
-      "cognitive_biases": ["Confirmation bias", "Negativity bias"],
-      "attachment_style": "Anxious-preoccupied",
-      "religion": "Nominal Christian",
-      "trauma_history": "Friend's death in accident — unresolved",
-      "stress_level": "High",
-      "habits": ["Night owl", "Avoids social events"],
-      "why_contacted_us": "Saw Christian video that made her cry",
-      "digital_behavior": ["Active on Instagram", "Searches for spiritual content"],
-      "peer_pressure": ["Friends mock faith"],
-      "attachment_history": "Emotionally distant parents (based on Bowlby theory)",
-      "culture": "Middle Eastern / Egyptian",
-      "neuroprofile": "Sensitive limbic response",
-      "meta_programs": ["Away-from motivation", "External validation"],
-      "philosophical_views": ["Existentialism", "Skepticism"]
+    "name": "Mariam",
+    "age": 24,
+    "country": "Egypt",
+    "difficulty_level": "1–5",
+    "religious_context": "muslim",
+    "personality": "Skeptical but emotionally open",
+    "barriers": ["God and suffering", "trust in religion"],
+    "openness": "Medium",
+    "goal": "To see if God is real and personal",
+    "big_five_traits": {
+        "openness": "high",
+        "conscientiousness": "medium",
+        "extraversion": "low",
+        "agreeableness": "medium",
+        "neuroticism": "high"
+    },
+    "temperament": "Melancholic",
+    "worldview_and_values": ["Humanism", "Skepticism"],
+    "beliefs": ["Religion is man-made", "God may exist but is distant"],
+    "motivation_and_goals": ["Find meaning after loss", "Reconnect with hope"],
+    "background": "Grew up in nominal faith, lost friend in accident",
+    "erikson_stage": "Young adulthood — Intimacy vs. Isolation",
+    "emotional_intelligence": "Moderate",
+    "thinking_style": "Analytical with emotional interference",
+    "biological_factors": ["Sleep-deprived", "Hormonal imbalance"],
+    "social_context": ["Urban Egyptian culture", "Peers secular"],
+    "enneagram": "Type 4 — Individualist",
+    "disc_profile": "C — Conscientious",
+    "stress_tolerance": "Low",
+    "self_image": "Feels broken, searching for healing",
+    "cognitive_biases": ["Confirmation bias", "Negativity bias"],
+    "attachment_style": "Anxious-preoccupied",
+    "religion": "Nominal Christian",
+    "trauma_history": "Friend's death in accident — unresolved",
+    "stress_level": "High",
+    "habits": ["Night owl", "Avoids social events"],
+    "why_contacted_us": "Saw Christian video that made her cry",
+    "digital_behavior": ["Active on Instagram", "Searches for spiritual content"],
+    "peer_pressure": ["Friends mock faith"],
+    "attachment_history": "Emotionally distant parents (based on Bowlby theory)",
+    "culture": "Middle Eastern / Egyptian",
+    "neuroprofile": "Sensitive limbic response",
+    "meta_programs": ["Away-from motivation", "External validation"],
+    "philosophical_views": ["Existentialism", "Skepticism"],
+    "life_history":  "I grew up in the suburbs of Casablanca, where family honor and faith were everything. My father was a respected man in the community; his words at the mosque were always firm and righteous. At home, he demanded the same unquestioning obedience. But the foundation of our home was made of sand. My parents' divorce when I was 12 wasn't just a separation; it was an earthquake that exposed the hypocrisy. The man who preached piety in public was the reason for my mother's quiet tears in private. Religion became a mask for control, a tool that couldn't keep my world from falling apart. I retreated into myself, finding solace not in prayer, but in logic and reason. While my peers discussed faith, I was on forums debating philosophy. Analyzing the world felt safer than feeling it. I learned to be self-sufficient, to build my walls so high that no one could cause another earthquake. Now, at 29, I live a stable but empty life. I perform the cultural rituals, but my heart isn't in it. My long, solitary walks are the only time I feel honest. I'm tired of the disconnect between my inner world and the one everyone expects me to be a part of."
 }
 
 
@@ -155,7 +161,7 @@ async def generate_and_store_profile(conn, db_user_id, chat_id, bot, profile_ref
             stress_tolerance, self_image, cognitive_biases, attachment_style, religion,
             trauma_history, stress_level, habits, why_contacted_us, digital_behavior,
             peer_pressure, attachment_history, culture, neuroprofile, meta_programs, philosophical_views,
-            id_dialogue
+            id_dialogue, life_history
         ) VALUES (
             $1, $2, $3, $4, $5, $6, $7,
             $8, $9, $10, $11, $12, $13,
@@ -164,7 +170,7 @@ async def generate_and_store_profile(conn, db_user_id, chat_id, bot, profile_ref
             $24, $25, $26, $27, $28,
             $29, $30, $31, $32, $33,
             $34, $35, $36, $37, $38, $39,
-            $40
+            $40, $41
         )
         """,
         db_user_id,
@@ -206,7 +212,8 @@ async def generate_and_store_profile(conn, db_user_id, chat_id, bot, profile_ref
         persona.get("neuroprofile"),
         persona.get("meta_programs"),
         persona.get("philosophical_views"),
-        dialogue_id
+        dialogue_id,
+        persona.get("life_history")
     )
 
     await init_msg.delete()
@@ -996,6 +1003,7 @@ async def telegram_webhook(request: Request):
                     "neuroprofile": profile_row["neuroprofile"],
                     "meta_programs": profile_row["meta_programs"],
                     "philosophical_views": profile_row["philosophical_views"],
+                    "life_history": profile_row["life_history"]
                 }
             
                 # перетворимо на гарно форматований текст
