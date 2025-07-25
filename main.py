@@ -416,7 +416,7 @@ async def telegram_webhook(request: Request):
         #///////////////////////////////// ПИТАННЯ чи ОСТАННЯ ДІЯ БУЛА ОБРОБНИКОМ таблиці users /////////////////////////////
         print("ТЕСТ mark")
         if mark == 1:
-            translated = await translate_phrase(conn, db_user_id, "Let's chat now!")
+            translated = await translate_phrase(conn, db_user_id, "Let's chat!")
             await bot.send_message(
                 chat_id=chat_id,
                 text="🔥 "+ translated,
@@ -771,62 +771,17 @@ async def telegram_webhook(request: Request):
             if command_value == 'before_dialogue':
                 print(f"in body before_dialogue: {user_text}")
                 
-                row = await conn.fetchrow("SELECT language FROM users WHERE id = $1", db_user_id)
-                if row:
-                    language = row["language"]
-                else:
-                    language = 'eng'  # або значення за замовчуванням
-                
-                
-                messages = [
-                    {
-                        "role": "user",
-                        "content": (
-                            f"Determine whether the following phrase: {user_text} indicates agreement in the language specified by the ISO 639-2 code: {language}." 
-                            f"Return the English word 'yes' if the phrase indicates agreement, or 'no' if it does not."
-                            f"Return exactly yes or no as plain text, without any quotes or formatting."
-                        )
-                    }
-                ]
-                
-                # Отримуємо код країни
-                user_answer = await query_openai_chat(messages)
-                print(f"user_answer: {user_answer}")
-    
-                if user_answer.lower() in ("yes", "y"):
-                    #автоматчичне створення випадкового співрозмовника
-                    await conn.execute("""
-                        INSERT INTO user_commands (user_id, command)
-                        VALUES ($1, $2)
-                        ON CONFLICT (user_id) DO UPDATE SET command = EXCLUDED.command
-                    """, db_user_id, "new_dialogue")
-    
-                    command_value = 'new_dialogue'
-    
-                else:
-                    translated = await translate_phrase(conn, db_user_id, "Please describe your conversation partner.")
-                    init_msg =await bot.send_message(
-                        chat_id=chat_id,
-                        text="✅ "+translated,
-                        parse_mode="Markdown"
-                    )
 
-                    await conn.execute(
-                        "UPDATE user_commands SET command = 'new_handle_dialogue' WHERE user_id = $1",
-                        db_user_id
-                    )
-                    return {"status": "waiting_language"}
+                translated = await translate_phrase(conn, db_user_id, "Make your choice using the buttons provided.")
+                init_msg =await bot.send_message(
+                    chat_id=chat_id,
+                    text="✅ "+translated,
+                    parse_mode="Markdown"
+                )
+                return {"status": "waiting_language"}
     
             #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             
-            #/////////////////////// ОБРОБКА РЕСПОНСУ на питання НАЛАШТУВАНЬ СПІВРОЗМОВНИКА //////////////////////////////////////
-            if command_value == 'new_dialogue':
-                print("ОБРОБНИК команди - new_dialogue")
-                result = await generate_and_store_profile(conn, db_user_id, chat_id, bot, profile_reference)
-                if result:
-                    await conn.execute("UPDATE user_commands SET command = 'none' WHERE user_id = $1", db_user_id)
-                    mark = 1
-            #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
             #/////////////////////// ОБРОБКА РЕСПОНСУ на питання НАЛАШТУВАНЬ СПІВРОЗМОВНИКА //////////////////////////////////////
             if command_value == 'new_handle_dialogue':
