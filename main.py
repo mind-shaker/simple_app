@@ -91,7 +91,7 @@ def get_balance():
 
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Отримання з'єднання з PostgreSQL" 0
 async def get_connection():
-    print(f"ВХІД в базу даних")
+    #print(f"ВХІД в базу даних")
     return await asyncpg.connect(DATABASE_URL)
 
 
@@ -376,7 +376,7 @@ async def startup_event():
 #=================================================== Обробка Telegram webhook
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
-    print(f"отримано запиту з телеграма")
+    print(f"отримано запит з телеграма")
     data = await request.json()
     conn = await get_connection() #++++++++++++++++++++++ ВИКЛИК ФУНКЦІЇ "Отримання з'єднання з PostgreSQL" 0 +++++++++++++++++++
     # Обробка callback_query (натискання кнопок)
@@ -414,7 +414,7 @@ async def telegram_webhook(request: Request):
             await conn.execute("UPDATE user_commands SET command = 'new_handle_dialogue' WHERE user_id = $1", db_user_id)
 
         #///////////////////////////////// ПИТАННЯ чи ОСТАННЯ ДІЯ БУЛА ОБРОБНИКОМ таблиці users /////////////////////////////
-        print("ТЕСТ mark")
+        #print("ТЕСТ mark")
         if mark == 1:
             translated = await translate_phrase(conn, db_user_id, "Let's chat!")
             await bot.send_message(
@@ -445,7 +445,7 @@ async def telegram_webhook(request: Request):
         
         try:
             #///////////////////////////////////////// ТЕСТ НА ПЕРШИЙ ВХІД В БОТА //////////////////////////////////////////////
-            print("ТЕСТ НА ПЕРШИЙ ВХІД В БОТА")
+            #print("ТЕСТ НА ПЕРШИЙ ВХІД В БОТА")
             # перевірка чи існує в таблиці користувачів поточний користувач user_id в полі таблиці telegram_id. existing_user - це массив значень по користувачу
             existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
     
@@ -496,7 +496,7 @@ async def telegram_webhook(request: Request):
             #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             
             #////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО МОВУ СПІЛКУВАННЯ ////////////////////////////////////
-            print("ОБРОБНИК команди - language")
+            #print("ОБРОБНИК команди - language")
             if command_value == 'language':
                 translating_msg = await bot.send_message(chat_id=chat_id, text="🧠 Traslating...")
                 print(f"in body language")
@@ -541,7 +541,7 @@ async def telegram_webhook(request: Request):
             #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
             #//////////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО ІМЯ /////////////////////////////////////////// 
-            print("ОБРОБНИК команди - name")
+            #print("ОБРОБНИК команди - name")
             if command_value == 'name':
                 print(f"in body name: {user_text}")
                 await conn.execute(
@@ -561,7 +561,7 @@ async def telegram_webhook(request: Request):
     
     
             #//////////////////////////////////// ОБРОБКА РЕСПОНСУ на питання ПРО КРАЇНУ ///////////////////////////////////////////
-            print("ОБРОБНИК команди - country")
+            #print("ОБРОБНИК команди - country")
             if command_value == 'country':
                 print(f"in body country: {user_text}")
                 translated = await translate_phrase(conn, db_user_id, "Registration of your data is in progress...")
@@ -609,7 +609,7 @@ async def telegram_webhook(request: Request):
                 # Отримуємо код країни
                 country_code = await query_openai_chat(messages)
                 
-                print(f"country_code: {country_code}")
+                #print(f"country_code: {country_code}")
                 country_code = country_code.strip().upper()
                 
                 # Перевіряємо, що це дійсний код
@@ -642,7 +642,7 @@ async def telegram_webhook(request: Request):
             
             
             #/////////////////////////////////// ОБРОБКА ПЕРЕРИВАННЯ ПОТОЧНОГО ДІАЛОГУ //////////////////////////////////////////
-            print("ОБРОБНИК команди - /new")
+            #print("ОБРОБНИК команди - /new")
             if user_text == "/new":
                 # Знаходимо ID останнього діалогу користувача
                 row_id = await conn.fetchrow("""
@@ -715,9 +715,9 @@ async def telegram_webhook(request: Request):
     
     
             #/////////////////////////////////// ПРОДОВЖЕННЯ ОБРОБКИ ПЕРЕРИВАННЯ ДІАЛОГУ //////////////////////////////////////
-            print("ОБРОБНИК команди - continue_new")
+            #print("ОБРОБНИК команди - continue_new")
             if command_value == 'continue_new':
-                print(f"in body dialogue: {user_text}")
+                #print(f"in body dialogue: {user_text}")
                 
                 row = await conn.fetchrow("SELECT language FROM users WHERE id = $1", db_user_id)
                 if row:
@@ -767,9 +767,9 @@ async def telegram_webhook(request: Request):
             #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
             #/////////////////// ОБРОБКА ПОПЕРЕДНЬОГО опитування перед НАЛАШТУВАНЯМ СПІВРОЗМОВНИКА //////////////////////////////
-            print("ОБРОБНИК команди - before_dialogue")
+            #print("ОБРОБНИК команди - before_dialogue")
             if command_value == 'before_dialogue':
-                print(f"in body before_dialogue: {user_text}")
+                #print(f"in body before_dialogue: {user_text}")
                 
 
                 translated = await translate_phrase(conn, db_user_id, "Make your choice using the buttons provided.")
@@ -800,9 +800,9 @@ async def telegram_webhook(request: Request):
             #=========================================== ФУНКЦІЇ ПОШУКУ НЕВИЗНАЧЕНИХ ХАРАКТЕРИСТИК =============================
     
             #////////////////////////////// ТЕСТ комірки ПРО МОВУ СПІЛКУВАННЯ ////////////////////////////////////
-            print("ТЕСТ команди - language")
+            #print("ТЕСТ команди - language")
             if not existing_user["language"]:
-                print(f"Тест пустої комірки мови")
+                #print(f"Тест пустої комірки мови")
          
                 await conn.execute("""
                     INSERT INTO user_commands (user_id, command)
@@ -820,9 +820,9 @@ async def telegram_webhook(request: Request):
     
     
             #/////////////////////////////////////// ТЕСТ комірки ДЕ ВКАЗАНО ІМЯ ////////////////////////////////////////////////
-            print("ТЕСТ команди - name")
+            #print("ТЕСТ команди - name")
             if not existing_user["name"]:
-                print(f"Тест пустої комірки імя")
+                #print(f"Тест пустої комірки імя")
     
     
                 await conn.execute("""
@@ -844,9 +844,9 @@ async def telegram_webhook(request: Request):
     
     
             #/////////////////////////////////////// ТЕСТ комірки ДЕ ВКАЗАНО КРАЇНУ ////////////////////////////////////////////////
-            print("ТЕСТ команди - country")
+            #print("ТЕСТ команди - country")
             if not existing_user["country"]:
-                print(f"Тест пустої комірки країни")
+                #print(f"Тест пустої комірки країни")
     
     
                 await conn.execute("""
@@ -869,9 +869,9 @@ async def telegram_webhook(request: Request):
     
     
             #/////////////////////////////////////// ПИТАННЯ про РУЧНЕ ВИЗНАЧЕННЯ СПІВРОЗМОВНИКА ////////////////////////////////
-            print("ТЕСТ команди - initial")
+            #print("ТЕСТ команди - initial")
             if not existing_user["initial"]:
-                print(f"Тест пустої комірки initial")
+                #print(f"Тест пустої комірки initial")
     
     
                 await conn.execute("""
@@ -897,7 +897,7 @@ async def telegram_webhook(request: Request):
             #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             
             #///////////////////////////////// ПИТАННЯ чи ОСТАННЯ ДІЯ БУЛА ОБРОБНИКОМ таблиці users /////////////////////////////
-            print("ТЕСТ mark")
+            #print("ТЕСТ mark")
             if mark == 1:
                 translated = await translate_phrase(conn, db_user_id, "Let's chat!")
                 await bot.send_message(
@@ -915,7 +915,7 @@ async def telegram_webhook(request: Request):
             #////////////////////////////////////////////////////// ДІАЛОГ  //////////////////////////////////////////////////////
             #====================================================================================================================
     
-            print("ДІАЛОГ")
+            #print("ДІАЛОГ")
             translated = await translate_phrase(conn, db_user_id, "I'm thinking...")
             thinking_msg = await bot.send_message(
                 chat_id=chat_id,
