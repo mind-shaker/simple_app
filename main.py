@@ -387,6 +387,7 @@ async def telegram_webhook(request: Request):
         user_id = callback["from"]["id"]
 
         print(f"Отримано натискання кнопки: {callback_data}")
+        mark = 0
         
         # Прибрати кнопки
         await bot.edit_message_reply_markup(
@@ -400,8 +401,25 @@ async def telegram_webhook(request: Request):
         if callback_data == "I get":
             # Надсилаємо відповідь або редагуємо повідомлення
             await bot.send_message(chat_id, "🔄 Генерую автоматично!")
+            result = await generate_and_store_profile(conn, db_user_id, chat_id, bot, profile_reference)
+                if result:
+                    await conn.execute("UPDATE user_commands SET command = 'none' WHERE user_id = $1", db_user_id)
+                    mark = 1
         elif callback_data == "As you wish":
             await bot.send_message(chat_id, "✍️ Вкажіть ваші побажання:")
+            await conn.execute("UPDATE user_commands SET command = 'new_handle_dialogue' WHERE user_id = $1", db_user_id)
+
+        #///////////////////////////////// ПИТАННЯ чи ОСТАННЯ ДІЯ БУЛА ОБРОБНИКОМ таблиці users /////////////////////////////
+        print("ТЕСТ mark")
+        if mark == 1:
+            translated = await translate_phrase(conn, db_user_id, "Let's chat now!")
+            await bot.send_message(
+                chat_id=chat_id,
+                text="🔥 "+ translated,
+                parse_mode="Markdown"
+            )
+            return {"status": "data_updated"}
+        #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         return {"status": "button pressed"}
 
