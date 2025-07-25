@@ -11,7 +11,8 @@ import json
 import asyncio
 from datetime import datetime, timedelta, timezone
 
-print("ТЕСТ НА ПЕРШИЙ ВХІД В БОТА")
+print("Working directory:", os.getcwd())
+print("Files in current directory:", os.listdir('.'))
 
 
 
@@ -36,8 +37,8 @@ keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="add your own preferences", callback_data="As you wish")]
 ])
 
-with open('errors.json', 'r', encoding='utf-8') as f:
-    ERRORS = json.load(f)
+#with open('errors.json', 'r', encoding='utf-8') as f:
+#    ERRORS = json.load(f)
 
 errors_list = json.dumps(ERRORS, ensure_ascii=False, indent=2)
 
