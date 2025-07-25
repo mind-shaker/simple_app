@@ -40,7 +40,7 @@ keyboard = InlineKeyboardMarkup(inline_keyboard=[
 #with open('errors.json', 'r', encoding='utf-8') as f:
 #    ERRORS = json.load(f)
 
-errors_list = json.dumps(ERRORS, ensure_ascii=False, indent=2)
+#errors_list = json.dumps(ERRORS, ensure_ascii=False, indent=2)
 
 profile_reference = {
     "name": "Mariam",
