@@ -568,7 +568,7 @@ async def telegram_webhook(request: Request):
                 reg_process_msg = await bot.send_message(
                     chat_id=chat_id,
                     text="🧠 "+ translated,
-                    parse_mode="Markdown"
+                    #parse_mode="Markdown"
                 )
                 text_to_translate = """🎉 *Congratulations!* You’ve successfully registered.
     
@@ -594,7 +594,7 @@ async def telegram_webhook(request: Request):
                 await bot.send_message(
                     chat_id=chat_id,
                     text=translated +"\n\n\n\n---------",
-                    parse_mode="Markdown"
+                    #parse_mode="Markdown"
                 )
         
                 
