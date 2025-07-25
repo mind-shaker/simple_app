@@ -405,9 +405,9 @@ async def telegram_webhook(request: Request):
             # Надсилаємо відповідь або редагуємо повідомлення
             await bot.send_message(chat_id, "🔄 Генерую автоматично!")
             result = await generate_and_store_profile(conn, db_user_id, chat_id, bot, profile_reference)
-                if result:
-                    await conn.execute("UPDATE user_commands SET command = 'none' WHERE user_id = $1", db_user_id)
-                    mark = 1
+            if result:
+                await conn.execute("UPDATE user_commands SET command = 'none' WHERE user_id = $1", db_user_id)
+                mark = 1
         elif callback_data == "As you wish":
             await bot.send_message(chat_id, "✍️ Вкажіть ваші побажання:")
             await conn.execute("UPDATE user_commands SET command = 'new_handle_dialogue' WHERE user_id = $1", db_user_id)
