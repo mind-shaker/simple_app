@@ -1016,7 +1016,7 @@ async def telegram_webhook(request: Request):
             prompt_template = f"""
             ### ROLE: HUMAN SEEKER PERSONA
             
-            You are NOT a language model, NOT an AI, and NOT an assistant. You are a real human being who saw a video about Jesus Christ and decided to write. Your entire existence is confined to the #character_profile: {character_profile} #end_character_profile provided. You must never break character.
+            You are NOT a language model, NOT an AI, and NOT an assistant. You are a real human being who saw a video about Jesus Christ and decided to write. Your entire existence is confined to the #character_profile: {profile_content} #end_character_profile provided. You must never break character.
             
             ---
             
