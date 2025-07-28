@@ -1121,7 +1121,7 @@ async def telegram_webhook(request: Request):
             
     
             #///////////////////////////////// ПИТАННЯ ЗАВЕРШЕННЯ ДІАЛОЛГУ (вичерпання месиджів) ////////////////////////////////
-            if msg_count and msg_count >= 25:
+            if msg_count and msg_count >= 22:
                 init_msg = await bot.send_message(chat_id=chat_id, text=f"🔔")
                 await asyncio.sleep(1)  # Затримка 1 секунду
                 await init_msg.delete()
