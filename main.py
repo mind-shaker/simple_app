@@ -370,7 +370,24 @@ async def check_dialog_times():
                 parse_mode="Markdown"
             )
 
-            # Тут можна додати логіку надсилання повідомлення через Telegram
+            translated = await translate_phrase(conn, db_user_id, "\n\nThank you for the conversation. \nYou will automatically be offered to generate a new respondent profile and start a new dialogue.")
+            await bot.send_message(
+                chat_id=chat_id,
+                text="✅ "+translated,
+                parse_mode="Markdown"
+            )
+
+            await conn.execute(
+                "UPDATE user_commands SET command = 'before_dialogue' WHERE user_id = $1",
+                db_user_id
+            )
+            translated = await translate_phrase(conn, db_user_id, "Would you like me to automatically generate the characteristics of your conversation partner?")
+            await bot.send_message(
+                chat_id=chat_id,
+                text="🔥 "+translated,
+                parse_mode="Markdown",
+                reply_markup=keyboard
+            )
 
     await conn.close()
 
@@ -691,7 +708,6 @@ async def telegram_webhook(request: Request):
                         text="🔥 "+ translated,
                         parse_mode="Markdown"
                     )
-                    #await bot.send_message(chat_id=chat_id, text="👋 U vas dostatno povidomlen dlya rezjumuvannya. Bazaete rezyumuvaty potochny dialog?")
                     await conn.execute(
                         "UPDATE user_commands SET command = 'continue_new' WHERE user_id = $1",
                         db_user_id
