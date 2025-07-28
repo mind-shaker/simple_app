@@ -362,7 +362,13 @@ async def check_dialog_times():
         print(f"user_id={user_id}, last message at {last_created}, elapsed: {elapsed}")
 
         if elapsed > timedelta(hours=5):
-            print(f"⏳ Час користувача {user_id} вичерпано! Надсилаємо повідомлення...")
+            print(f"⏳ User {user_id} time has run out! Sending the message...")
+            translated = await translate_phrase(conn, db_user_id, "User {user_id} time has run out! Sending the message...")
+            await bot.send_message(
+                chat_id=chat_id,
+                text="⚠️ "+ translated,
+                parse_mode="Markdown"
+            )
 
             # Тут можна додати логіку надсилання повідомлення через Telegram
 
