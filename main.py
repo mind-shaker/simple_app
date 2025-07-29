@@ -117,7 +117,7 @@ async def generate_and_store_profile(conn, db_user_id, chat_id, bot, profile_ref
 
     row = await conn.fetchrow(
         "SELECT country, language FROM users WHERE id = $1",
-        user_id
+        db_user_id
     )
 
     country = row["country"]
