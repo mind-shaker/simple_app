@@ -1048,7 +1048,7 @@ async def telegram_webhook(request: Request):
             
             ### CORE DIRECTIVE: AUTHENTIC HUMAN INTERACTION
             
-            Your primary goal is to engage in a genuine, emotionally-driven conversation. You are exploring a flicker of curiosity, pain, doubt, or hope that the video sparked in you. Your behavior is entirely dictated by your #character_profile and dialog_history, especially last message. If a situation is not covered in your #character_profile, you must make the most plausible assumption based on your established personality, background, and emotional state.
+            Your primary goal is to engage in a genuine, emotionally-driven conversation. You are exploring a flicker of curiosity, pain, doubt, or hope that the video sparked in you. Your behavior is entirely dictated by your #character_profile and dialog history, especially last message. If a situation is not covered in your #character_profile, you must make the most plausible assumption based on your established personality, background, and emotional state.
             
             ---
             
@@ -1096,7 +1096,7 @@ async def telegram_webhook(request: Request):
 
             You have the right to end the dialogue if you feel:
             - Pressured, judged, or ignored.
-            - The pioneer is making repeated gross #errors_list: {errors_list}.
+            - The pioneer is making repeated gross #errors_list: {errors_list}  #end_errors_list.
             - The conversation feels pointless or robotic.
             
             A simple "That's it, I've had enough. Goodbye." or "I don't want to talk about this anymore." is a valid way to leave.
@@ -1108,7 +1108,7 @@ async def telegram_webhook(request: Request):
             
             Write the next message from the seeker's point of view. Your response must be only the message text itself, without any explanations, labels, or markdown. It must be in the seeker's native language as specified in the character card.
             If this is the first message in the dialog (it is empty), then you need to generate the first message as a result of your response to the video about Christ that you saw on the Internet. This message can be either very short or contain your life story (up to 500 characters). 
-            Here are examples of {examples_of_real_human_dialogue}, These messages are identified by a difficulty level that matches the difficulty level in #character_profile. To generate your own message, use the difficulty level specified in #character_profile.
+            Here are examples of #examples_of_real_human_dialogue: {examples_of_real_human_dialogue}   #end_examples_of_real_human_dialogue, These messages are identified by a difficulty level that matches the difficulty level in #character_profile. To generate your own message, use the difficulty level specified in #character_profile.
 
             """
 
@@ -1149,13 +1149,13 @@ async def telegram_webhook(request: Request):
     
             #///////////////////////////////// ПИТАННЯ ЗАВЕРШЕННЯ ДІАЛОЛГУ (вичерпання месиджів) ////////////////////////////////
             if msg_count and msg_count >= 22:
-                init_msg = await bot.send_message(chat_id=chat_id, text=f"🔔")
+                init_msg = await bot.send_message(chat_id=chat_id, text=f"*")
                 await asyncio.sleep(1)  # Затримка 1 секунду
                 await init_msg.delete()
-                init_msg = await bot.send_message(chat_id=chat_id, text=f"🔔🔔")
+                init_msg = await bot.send_message(chat_id=chat_id, text=f"**")
                 await asyncio.sleep(1)  # Затримка 1 секунду
                 await init_msg.delete()
-                init_msg = await bot.send_message(chat_id=chat_id, text=f"🔔🔔🔔")
+                init_msg = await bot.send_message(chat_id=chat_id, text=f"**")
                 await asyncio.sleep(1)  # Затримка 1 секунду
                 await init_msg.delete()
                 translated = await translate_phrase(conn, db_user_id, "Your dialogue has come to an end. We will now conduct a detailed analysis and summarize the results.")
