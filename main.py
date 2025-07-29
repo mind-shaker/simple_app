@@ -967,6 +967,8 @@ async def telegram_webhook(request: Request):
                 db_user_id
             )
             rows = list(reversed(rows))
+
+            print("📦 dialogue:", rows)
     
             
             user_messages = [
@@ -976,7 +978,7 @@ async def telegram_webhook(request: Request):
                 }
                 for row in rows
             ]
-
+            print("📦 user_messages:", user_messages)
 
 
     
