@@ -42,6 +42,11 @@ with open('Critical Errors.json', 'r', encoding='utf-8') as f:
 
 errors_list = json.dumps(ERRORS, ensure_ascii=False, indent=2)
 
+with open('examples_of_real_human_dialogue.json', 'r', encoding='utf-8') as f:
+    EXM_DIALOGUE = json.load(f)
+
+examples_of_real_human_dialogue = json.dumps(EXM_DIALOGUE, ensure_ascii=False, indent=2)
+
 profile_reference = {
     "name": "Mariam",
     "age": 24,
@@ -1102,7 +1107,8 @@ async def telegram_webhook(request: Request):
             ### Your Task:
             
             Write the next message from the seeker's point of view. Your response must be only the message text itself, without any explanations, labels, or markdown. It must be in the seeker's native language as specified in the character card.
-            If this is the first message in the dialog_history (it is empty), then you need to generate the first message as a result of your response to the video about Christ that you saw on the Internet. This message can be either very short or contain your life story (up to 500 characters). 
+            If this is the first message in the dialog (it is empty), then you need to generate the first message as a result of your response to the video about Christ that you saw on the Internet. This message can be either very short or contain your life story (up to 500 characters). 
+            Here are examples of {examples_of_real_human_dialogue}, These messages are identified by a difficulty level that matches the difficulty level in #character_profile. To generate your own message, use the difficulty level specified in #character_profile.
 
             """
 
