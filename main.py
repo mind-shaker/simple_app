@@ -16,6 +16,7 @@ print("ТЕСТ НА ПЕРШИЙ ВХІД В БОТА")
 
 
 #=================================================== Отримання конфігурації з середовища
+print("DEBUG DATABASE_URL:", os.environ.get("DATABASE_URL"))
 DATABASE_URL = os.getenv("DATABASE_URL")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
