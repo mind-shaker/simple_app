@@ -377,7 +377,7 @@ async def check_dialog_times():
             if telegram_row:
                 telegram_id = telegram_row['telegram_id']
                 # Надсилаємо повідомлення
-                translated = await translate_phrase(conn, user_id, "More than 5 hours have passed since your last message.\nYour response time has expired. The conversation is now closed."")
+                translated = await translate_phrase(conn, user_id, "More than 5 hours have passed since your last message.\nYour response time has expired. The conversation is now closed.")
                 await bot.send_message(chat_id=telegram_id, text="✅ "+ translated)
         
 
