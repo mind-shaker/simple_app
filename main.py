@@ -363,31 +363,30 @@ async def check_dialog_times():
 
         if elapsed > timedelta(hours=5):
             print(f"⏳ User {user_id} time has run out! Sending the message...")
-            translated = await translate_phrase(conn, db_user_id, "User {user_id} time has run out! Sending the message...")
-            await bot.send_message(
-                chat_id=chat_id,
-                text="⚠️ "+ translated,
-                parse_mode="Markdown"
+            # Отримуємо telegram_id з таблиці users
+            telegram_row = await conn.fetchrow(
+                "SELECT telegram_id FROM users WHERE id = $1",
+                user_id
             )
+        
+            if telegram_row:
+                telegram_id = telegram_row['telegram_id']
+                # Надсилаємо повідомлення
+                translated = await translate_phrase(conn, user_id, "User {user_id} time has run out! Sending the message...")
+                await bot.send_message(chat_id=telegram_id, text="✅ "+ translated)
+        
 
-            translated = await translate_phrase(conn, db_user_id, "\n\nThank you for the conversation. \nYou will automatically be offered to generate a new respondent profile and start a new dialogue.")
-            await bot.send_message(
-                chat_id=chat_id,
-                text="✅ "+translated,
-                parse_mode="Markdown"
-            )
-
-            await conn.execute(
-                "UPDATE user_commands SET command = 'before_dialogue' WHERE user_id = $1",
-                db_user_id
-            )
-            translated = await translate_phrase(conn, db_user_id, "Would you like me to automatically generate the characteristics of your conversation partner?")
-            await bot.send_message(
-                chat_id=chat_id,
-                text="🔥 "+translated,
-                parse_mode="Markdown",
-                reply_markup=keyboard
-            )
+                translated = await translate_phrase(conn, user_id, "\n\nThank you for the conversation. \nYou will automatically be offered to generate a new respondent profile and start a new dialogue.")
+                await bot.send_message(chat_id=telegram_id, text="✅ "+translated, parse_mode="Markdown"
+                )
+    
+                await conn.execute(
+                    "UPDATE user_commands SET command = 'before_dialogue' WHERE user_id = $1",
+                    user_id
+                )
+                translated = await translate_phrase(conn, user_id, "Would you like me to automatically generate the characteristics of your conversation partner?")
+                await bot.send_message( chat_id=telegram_id, text="🔥 " + translated, parse_mode="Markdown", reply_markup=keyboard
+                )
 
     await conn.close()
 
