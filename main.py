@@ -962,18 +962,12 @@ async def telegram_webhook(request: Request):
                 db_user_id, user_text, dialogue_id
             )
 
-
             rows = await conn.fetch(
-                """
-                SELECT role, message 
-                FROM dialogs 
-                WHERE user_id = $1 AND dialogue_id = $2 
-                ORDER BY id DESC 
-                LIMIT 10
-                """,
-                db_user_id, dialogue_id
+            "SELECT role, message FROM dialogs WHERE user_id = $1 ORDER BY id DESC LIMIT 10",
+            db_user_id
             )
             rows = list(reversed(rows))
+    
             
             user_messages = [
                 {
@@ -982,6 +976,9 @@ async def telegram_webhook(request: Request):
                 }
                 for row in rows
             ]
+
+
+
     
             print("📦 user_id:", db_user_id)
             # Витягнути профіль із бази для користувача (припустимо, user_id)
