@@ -115,31 +115,51 @@ async def generate_and_store_profile(conn, db_user_id, chat_id, bot, profile_ref
         parse_mode="Markdown"
     )
 
+    row = await conn.fetchrow(
+        "SELECT country, language FROM users WHERE id = $1",
+        user_id
+    )
+
+    country = row["country"]
+    language = row["language"]
+
+
     # Побудова запиту
-    user_context = f"\n\nПри генерації полів профілю врахуй будь ласка ось ці побажання: {user_text}" if user_text else ""
+    user_context = f"\n\nWhen generating profile fields, please consider these wishes: {user_text}" if user_text else ""
 
     messages = [
         {
             "role": "system",
-            "content": "Ти — помічник, який створює психологічні профілі вигаданих людей."
+            "content": "You are an expert prompt engineer and psychologist. Your task is to generate highly coherent and culturally plausible psychological profiles of fictional individuals, strictly following a predefined JSON schema."
+
         },
         {
             "role": "user",
-            "content": f"""Згенеруй новий профіль, використовуючи структуру та формат як в наданому нижче прикладі профілю, але з новими значеннями, які логічно відповідають полям.
+            "content": f""""Generate a new profile in *pure JSON* (no markdown, no extra text), strictly adhering to the structure, field names, and example types shown in #profile_reference: {json.dumps(profile_reference, ensure_ascii=False, indent=2)}  #end_profile_reference. All field values must be:
 
-            Ось приклад профілю:
-            {json.dumps(profile_reference, ensure_ascii=False, indent=2)}
+            1. *Culturally consistent* with the person’s country - {country} of origin (use local names, typical life events, socio‑cultural details).
+            2. **Internally coherent**—every field must align to form a single believable character.
+            3. **Detailed**—don’t leave generic placeholders; flesh out every field.
+            4. *In English*.
             
-            У значенні ключа difficulty_level в новому згенерованому профілі заміни цифру на характеристику, яка відповідає тій цифрі разом з цифрою з цього списку:
-              1 — Open, with a mild spiritual inquiry
-              2 — Doubtful, searching, but with barriers
-              3 — Emotionally wounded, closed-off, critical
-              4 — Hostile or apathetic, with negative personal experience
-              5 — Provocative, aggressive, theologically well-versed
-            {user_context}
+            Be sure to incorporate the preferences specified in  {user_text} when generating the profile.
+
             
-            Відповідь дай у форматі **JSON**, без жодних пояснень.
-            Без коду markdown, тільки чистий JSON."""
+            *Special rule for difficulty_level: * replace the numeric value with the mapping <number> — <descriptor>:
+            1 — Open, with a mild spiritual inquiry
+            2 — Doubtful, searching, but with barriers
+            3 — Emotionally wounded, closed-off, critical
+            4 — Hostile or apathetic, with negative personal experience
+            5 — Provocative, aggressive, theologically well-versed
+
+            Be sure to incorporate the preferences specified in #user_context: {user_context} #end_user_context when generating the profile.
+            
+            
+            *Additional instructions:*
+            - Validate the output against the given JSON schema.
+            - Use realistic names, dates, occupations, and life‑story details for the {country}.
+            - Produce only the JSON object—no explanations, no commentary.
+            """
         }
     ]
 
