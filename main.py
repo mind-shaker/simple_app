@@ -961,13 +961,19 @@ async def telegram_webhook(request: Request):
                 "INSERT INTO dialogs (user_id, role, message, created_at, id_dialogue) VALUES ($1, 'user', $2, NOW(), $3)",
                 db_user_id, user_text, dialogue_id
             )
-    
+
+
             rows = await conn.fetch(
-                "SELECT role, message FROM dialogs WHERE user_id = $1 ORDER BY id DESC LIMIT 10",
-                db_user_id
+                """
+                SELECT role, message 
+                FROM dialogs 
+                WHERE user_id = $1 AND dialogue_id = $2 
+                ORDER BY id DESC 
+                LIMIT 10
+                """,
+                db_user_id, dialogue_id
             )
             rows = list(reversed(rows))
-    
             
             user_messages = [
                 {
