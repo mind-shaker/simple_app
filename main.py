@@ -478,7 +478,7 @@ async def telegram_webhook(request: Request):
             return {"status": "data_updated"}
         #////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        return {"status": "button pressed"}
+        return {"status": " button pressed"}
 
     # Обробка звичайного текстового повідомлення
     elif "message" in data:
