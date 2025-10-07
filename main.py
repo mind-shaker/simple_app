@@ -414,7 +414,7 @@ async def check_dialog_times():
     await conn.close()
 
 
-#=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Періодичного опитування"
+#=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Періодичного звернення до функції тесту простоя"
 async def periodic_check():
     while True:
         await check_dialog_times()
@@ -498,7 +498,7 @@ async def telegram_webhook(request: Request):
         
         try:
             #///////////////////////////////////////// ТЕСТ НА ПЕРШИЙ ВХІД В БОТА //////////////////////////////////////////////
-            #print("ТЕСТ НА ПЕРШИЙ ВХІД В БОТА")
+            print("ТЕСТ НА ПЕРШИЙ ВХІД В БОТА")
             # перевірка чи існує в таблиці користувачів поточний користувач user_id в полі таблиці telegram_id. existing_user - це массив значень по користувачу
             existing_user = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", user_id)
     
