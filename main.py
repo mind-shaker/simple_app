@@ -419,8 +419,10 @@ async def periodic_check():
     while True:
         await check_dialog_times()
         await asyncio.sleep(600)  # 10 хвилин
-
-
+#=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "http - response"
+@app.get("/")
+async def root():
+    return {"message": "Server is working!"}
 #=================================================== ДЕКЛАРАЦІЯ ФУНКЦІЇ "Запуск фонової процедури"
 @app.on_event("startup")
 async def startup_event():
